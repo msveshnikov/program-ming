@@ -20,16 +20,14 @@ susie_image = pygame.image.load('susie.png')
 ralsei_image = pygame.image.load('ralsei.png')
 
 # Размеры персонажей
-player_size = 300
-npc_size = 300
+player_size = 100
+npc_size = 100
 
 # Масштабирование фона под размер окна
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 player_image = pygame.transform.scale(player_image, (player_size, player_size))
 susie_image = pygame.transform.scale(susie_image, (npc_size, npc_size))
 ralsei_image = pygame.transform.scale(ralsei_image, (npc_size, npc_size))
-
-
 
 
 # Параметры персонажей
@@ -44,9 +42,13 @@ class NPC:
         self.x = x
         self.y = y
         self.image = image
-        self.speed = 3  # Уменьшаем скорость для баланса
+        self.base_speed = 5  # Базовая скорость
+        self.speed = self.base_speed
     
     def move(self, target_x, target_y):
+        # Случайное изменение скорости в пределах ±2 от базовой скорости
+        self.speed = self.base_speed + random.uniform(-2, 2)
+        
         # Вычисляем направление к игроку
         dx = target_x - self.x
         dy = target_y - self.y
