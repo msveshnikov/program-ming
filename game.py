@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import math
 
 # Инициализация Pygame и mixer
 pygame.init()
@@ -35,6 +36,7 @@ ralsei_image = pygame.transform.scale(ralsei_image, (npc_size, npc_size))
 player_x = WIDTH // 2
 player_y = HEIGHT // 2
 player_speed = 10
+game_over = False  # Добавляем переменную для отслеживания конца игры
 
 # Параметры NPC
 class NPC:
@@ -42,32 +44,39 @@ class NPC:
         self.x = x
         self.y = y
         self.image = image
-        self.direction_timer = 0
-        self.direction = [0, 0]
-        self.speed = 5
+        self.speed = 3  # Уменьшаем скорость для баланса
     
-    def move(self):
-        current_time = pygame.time.get_ticks()
+    def move(self, target_x, target_y):
+        # Вычисляем направление к игроку
+        dx = target_x - self.x
+        dy = target_y - self.y
         
-        # Меняем направление каждые 2 секунды
-        if current_time > self.direction_timer:
-            self.direction = [random.randint(-1, 1), random.randint(-1, 1)]
-            self.direction_timer = current_time + 2000
+        # Нормализуем вектор движения
+        distance = math.sqrt(dx**2 + dy**2)
+        if distance != 0:
+            dx = dx / distance
+            dy = dy / distance
         
-        # Движение NPC
-        new_x = self.x + self.direction[0] * self.speed
-        new_y = self.y + self.direction[1] * self.speed
+        # Движение NPC к игроку
+        new_x = self.x + dx * self.speed
+        new_y = self.y + dy * self.speed
         
         # Проверка границ экрана
         if 0 <= new_x <= WIDTH - npc_size:
             self.x = new_x
         if 0 <= new_y <= HEIGHT - npc_size:
             self.y = new_y
+    
+    def check_collision(self, player_x, player_y):
+        # Проверяем столкновение с игроком
+        player_rect = pygame.Rect(player_x, player_y, player_size, player_size)
+        npc_rect = pygame.Rect(self.x, self.y, npc_size, npc_size)
+        return player_rect.colliderect(npc_rect)
 
 # Создание NPC
-susie = NPC(600, 600, susie_image)
-ralsei = NPC(WIDTH - 500, HEIGHT - 500, ralsei_image)
-zuza = NPC(600, 600, susie_image)
+susie = NPC(0, 0, susie_image)
+ralsei = NPC(00, 500, ralsei_image)
+zuza = NPC(50, 50, susie_image)
 
 # Параметры звука
 footstep_sound = pygame.mixer.Sound('footsteps.mp3')
@@ -87,42 +96,60 @@ while True:
             pygame.quit()
             sys.exit()
     
-    # Управление персонажем
-    keys = pygame.key.get_pressed()
-    moved = False
-    
-    if keys[pygame.K_LEFT] and player_x > 0:
-        player_x -= player_speed
-        moved = True
-    if keys[pygame.K_RIGHT] and player_x < WIDTH - player_size:
-        player_x += player_speed
-        moved = True
-    if keys[pygame.K_UP] and player_y > 0:
-        player_y -= player_speed
-        moved = True
-    if keys[pygame.K_DOWN] and player_y < HEIGHT - player_size:
-        player_y += player_speed
-        moved = True
-    
-    # Движение NPC
-    susie.move()
-    ralsei.move()
-    zuza.move()
-    
-    # Управление звуком
-    if moved and not is_playing:
-        footstep_sound.play(-1)
-        is_playing = True
-    elif not moved and is_playing:
-        footstep_sound.stop()
-        is_playing = False
+    if not game_over:
+        # Управление персонажем
+        keys = pygame.key.get_pressed()
+        moved = False
+        
+        if keys[pygame.K_LEFT] and player_x > 0:
+            player_x -= player_speed
+            moved = True
+        if keys[pygame.K_RIGHT] and player_x < WIDTH - player_size:
+            player_x += player_speed
+            moved = True
+        if keys[pygame.K_UP] and player_y > 0:
+            player_y -= player_speed
+            moved = True
+        if keys[pygame.K_DOWN] and player_y < HEIGHT - player_size:
+            player_y += player_speed
+            moved = True
+        
+        # Движение NPC к игроку
+        susie.move(player_x, player_y)
+        ralsei.move(player_x, player_y)
+        zuza.move(player_x, player_y)
+        
+        # Проверка столкновений
+        if (susie.check_collision(player_x, player_y) or 
+            ralsei.check_collision(player_x, player_y) or 
+            zuza.check_collision(player_x, player_y)):
+            game_over = True
+            background_music.stop()
+        
+        # Управление звуком
+        if moved and not is_playing:
+            footstep_sound.play(-1)
+            is_playing = True
+        elif not moved and is_playing:
+            footstep_sound.stop()
+            is_playing = False
     
     # Отрисовка
-    WINDOW.blit(background_image, (0, 0))  # Отрисовываем фон вместо заливки цветом
-    WINDOW.blit(player_image, (player_x, player_y))
+    WINDOW.blit(background_image, (0, 0))
+    
+    if not game_over:
+        WINDOW.blit(player_image, (player_x, player_y))
     WINDOW.blit(susie.image, (susie.x, susie.y))
     WINDOW.blit(susie.image, (zuza.x, zuza.y))
     WINDOW.blit(ralsei.image, (ralsei.x, ralsei.y))
+    
+    if game_over:
+        # Отображаем текст Game Over
+        font = pygame.font.Font(None, 74)
+        text = font.render('Game Over', True, (255, 0, 0))
+        text_rect = text.get_rect(center=(WIDTH/2, HEIGHT/2))
+        WINDOW.blit(text, text_rect)
+    
     pygame.display.update()
     
     # Ограничение FPS
