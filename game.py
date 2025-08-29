@@ -10,12 +10,10 @@ pygame.mixer.init()
 WIDTH = 1800
 HEIGHT = 1000
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Движущийся персонаж")
-
-# Цвета
-hot_pink = (255, 105, 180)
+pygame.display.set_caption("my deltarune")
 
 # Загрузка изображений
+background_image = pygame.image.load('krisroom.png')  # Добавляем загрузку фона
 player_image = pygame.image.load('kris.png')
 susie_image = pygame.image.load('susie.png')
 ralsei_image = pygame.image.load('ralsei.png')
@@ -24,10 +22,14 @@ ralsei_image = pygame.image.load('ralsei.png')
 player_size = 300
 npc_size = 300
 
-# Масштабирование изображений
+# Масштабирование фона под размер окна
+background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 player_image = pygame.transform.scale(player_image, (player_size, player_size))
 susie_image = pygame.transform.scale(susie_image, (npc_size, npc_size))
 ralsei_image = pygame.transform.scale(ralsei_image, (npc_size, npc_size))
+
+
+
 
 # Параметры персонажей
 player_x = WIDTH // 2
@@ -63,12 +65,17 @@ class NPC:
             self.y = new_y
 
 # Создание NPC
-susie = NPC(200, 200, susie_image)
+susie = NPC(600, 600, susie_image)
 ralsei = NPC(WIDTH - 500, HEIGHT - 500, ralsei_image)
+zuza = NPC(600, 600, susie_image)
 
 # Параметры звука
 footstep_sound = pygame.mixer.Sound('footsteps.mp3')
+background_music = pygame.mixer.Sound('music.mp3')  # Добавляем фоновую музыку
 is_playing = False
+
+# Запускаем фоновую музыку
+background_music.play(-1)  # -1 означает бесконечное воспроизведение
 
 # Игровой цикл
 clock = pygame.time.Clock()
@@ -100,6 +107,7 @@ while True:
     # Движение NPC
     susie.move()
     ralsei.move()
+    zuza.move()
     
     # Управление звуком
     if moved and not is_playing:
@@ -110,9 +118,10 @@ while True:
         is_playing = False
     
     # Отрисовка
-    WINDOW.fill(hot_pink)
+    WINDOW.blit(background_image, (0, 0))  # Отрисовываем фон вместо заливки цветом
     WINDOW.blit(player_image, (player_x, player_y))
     WINDOW.blit(susie.image, (susie.x, susie.y))
+    WINDOW.blit(susie.image, (zuza.x, zuza.y))
     WINDOW.blit(ralsei.image, (ralsei.x, ralsei.y))
     pygame.display.update()
     
