@@ -38,20 +38,31 @@ game_over = False  # Добавляем переменную для отслеж
 
 # Параметры NPC
 class NPC:
-    def __init__(self, x, y, image):
+    def __init__(self, x, y, image, hunting=False):
         self.x = x
         self.y = y
         self.image = image
         self.base_speed = 5  # Базовая скорость
         self.speed = self.base_speed
+        self.hunting = hunting
+        self.random_direction = [random.uniform(-1, 1), random.uniform(-1, 1)]
+        self.direction_timer = 0
     
     def move(self, target_x, target_y):
-        # Случайное изменение скорости в пределах ±2 от базовой скорости
         self.speed = self.base_speed + random.uniform(-2, 2)
         
-        # Вычисляем направление к игроку
-        dx = target_x - self.x
-        dy = target_y - self.y
+        if self.hunting:
+            # Охотящийся NPC движется к игроку
+            dx = target_x - self.x
+            dy = target_y - self.y
+        else:
+            # Обновляем случайное направление каждые 60 кадров
+            if self.direction_timer <= 0:
+                self.random_direction = [random.uniform(-1, 1), random.uniform(-1, 1)]
+                self.direction_timer = 60
+            self.direction_timer -= 1
+            
+            dx, dy = self.random_direction
         
         # Нормализуем вектор движения
         distance = math.sqrt(dx**2 + dy**2)
@@ -59,15 +70,20 @@ class NPC:
             dx = dx / distance
             dy = dy / distance
         
-        # Движение NPC к игроку
+        # Движение NPC
         new_x = self.x + dx * self.speed
         new_y = self.y + dy * self.speed
         
-        # Проверка границ экрана
-        if 0 <= new_x <= WIDTH - npc_size:
-            self.x = new_x
-        if 0 <= new_y <= HEIGHT - npc_size:
-            self.y = new_y
+        # Проверка границ экрана и отражение при достижении границ
+        if not (0 <= new_x <= WIDTH - npc_size):
+            self.random_direction[0] *= -1
+            new_x = max(0, min(new_x, WIDTH - npc_size))
+        if not (0 <= new_y <= HEIGHT - npc_size):
+            self.random_direction[1] *= -1
+            new_y = max(0, min(new_y, HEIGHT - npc_size))
+            
+        self.x = new_x
+        self.y = new_y
     
     def check_collision(self, player_x, player_y):
         # Проверяем столкновение с игроком
@@ -75,10 +91,10 @@ class NPC:
         npc_rect = pygame.Rect(self.x, self.y, npc_size, npc_size)
         return player_rect.colliderect(npc_rect)
 
-# Создание NPC
-susie = NPC(0, 0, susie_image)
-ralsei = NPC(00, 500, ralsei_image)
-zuza = NPC(50, 50, susie_image)
+# Создание NPC с параметром hunting
+susie = NPC(0, 0, susie_image, hunting=False)
+ralsei = NPC(00, 500, ralsei_image, hunting=False)
+zuza = NPC(50, 50, susie_image, hunting=True)
 
 # Параметры звука
 footstep_sound = pygame.mixer.Sound('footsteps.mp3')
