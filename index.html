@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Deltarune Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        .game-title {
+            text-align: center;
+            color: #ff6b6b;
+        }
+        
+        .game-description {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .character-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .character-img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            margin: 10px auto;
+            display: block;
+        }
+        
+        .character-card {
+            background-color: #2d2d2d;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        
+        .character-card:hover {
+            transform: scale(1.05);
+        }
+        
+        .controls {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .key {
+            background-color: #404040;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="game-title">My Deltarune Game</h1>
+    
+    <div class="game-description">
+        <h2>Об игре</h2>
+        <p>Увлекательная игра, вдохновленная Deltarune, где вам предстоит управлять персонажем и избегать столкновений с другими персонажами. Перемещайтесь по комнате Криса и постарайтесь выжить!</p>
+    </div>
+    
+    <div class="character-section">
+        <div class="character-card">
+            <img src="kris.png" alt="Крис" class="character-img">
+            <h3>Крис</h3>
+            <p>Главный герой, которым управляет игрок</p>
+        </div>
+        
+        <div class="character-card">
+            <img src="susie.png" alt="Сьюзи" class="character-img">
+            <h3>Сьюзи</h3>
+            <p>NPC, случайно перемещающийся по карте</p>
+        </div>
+        
+        <div class="character-card">
+            <img src="ralsei.png" alt="Ральзей" class="character-img">
+            <h3>Ральзей</h3>
+            <p>NPC, случайно перемещающийся по карте</p>
+        </div>
+        
+        <div class="character-card">
+            <img src="susie.png" alt="Зуза" class="character-img">
+            <h3>Зуза</h3>
+            <p>Охотящийся NPC, преследует игрока</p>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <h2>Управление</h2>
+        <p>
+            <span class="key">←</span> Движение влево<br>
+            <span class="key">→</span> Движение вправо<br>
+            <span class="key">↑</span> Движение вверх<br>
+            <span class="key">↓</span> Движение вниз
+        </p>
+    </div>
+    
+    <div class="game-description">
+        <h2>Особенности</h2>
+        <ul>
+            <li>Динамичный геймплей</li>
+            <li>Фоновая музыка</li>
+            <li>Звуковые эффекты шагов</li>
+            <li>Различные типы поведения NPC</li>
+            <li>Система столкновений</li>
+        </ul>
+    </div>
+</body>
+</html>
