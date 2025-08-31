@@ -150,7 +150,7 @@ while True:
             is_playing = True
         elif not moved and is_playing:
             footstep_sound.stop()
-            is_playing = False
+            is_playing = False 
     
     # Отрисовка
     WINDOW.blit(background_image, (0, 0))
