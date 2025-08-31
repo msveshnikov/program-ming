@@ -14,11 +14,13 @@ WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("my deltarune")
 
 # Загрузка изображений
-background_image = pygame.image.load('krisroom.png')
+background_image = pygame.image.load('classroom.png')
 player_image = pygame.image.load('kris.png')
 susie_image = pygame.image.load('susie.png')
 ralsei_image = pygame.image.load('ralsei.png')
 svenka_image = pygame.image.load('svenka.png')  # Добавляем нового NPC
+background_battle = pygame.image.load('background_battle.png')
+background_battle = pygame.transform.scale(background_battle, (WIDTH, HEIGHT))
 
 # Размеры персонажей
 player_size = 100
@@ -49,6 +51,9 @@ class NPC:
         self.hunting = hunting
         self.random_direction = [random.uniform(-1, 1), random.uniform(-1, 1)]
         self.direction_timer = 0
+        self.health = 100  # Добавляем здоровье NPC
+        self.damage = 20   # Урон NPC
+        self.in_battle = False  # Флаг боевого режима
     
     def move(self, target_x, target_y):
         self.speed = self.base_speed + random.uniform(-2, 2)
@@ -101,6 +106,7 @@ svenka = NPC(WIDTH - 100, HEIGHT - 100, svenka_image, hunting=True)  # Доба�
 # Параметры звука
 footstep_sound = pygame.mixer.Sound('footsteps.mp3')
 background_music = pygame.mixer.Sound('music.mp3')  # Добавляем фоновую музыку
+battle_music = pygame.mixer.Sound('battle.mp3')
 is_playing = False
 
 # Запускаем фоновую музыку
@@ -108,6 +114,29 @@ background_music.play(-1)  # -1 означает бесконечное восп
 
 # Игровой цикл
 clock = pygame.time.Clock()
+
+# В начале файла добавим глобальные переменные для боевого режима
+player_health = 100
+battle_mode = False
+current_enemy = None
+battle_timer = 0
+BATTLE_COOLDOWN = 60  # Задержка между атаками (в кадрах)
+battle_font = pygame.font.Font(None, 36)
+
+# Функция для отрисовки боевого интерфейса
+def draw_battle_ui():
+    # Отрисовка здоровья игрока
+    player_health_text = battle_font.render(f'Player HP: {player_health}', True, (255, 255, 255))
+    WINDOW.blit(player_health_text, (10, 10))
+    
+    # Отрисовка здоровья врага
+    if current_enemy:
+        enemy_health_text = battle_font.render(f'Enemy HP: {current_enemy.health}', True, (255, 0, 0))
+        WINDOW.blit(enemy_health_text, (WIDTH - 200, 10))
+    
+    # Инструкции по управлению в бою
+    battle_instructions = battle_font.render('SPACE - атаковать, ESC - попытаться убежать', True, (255, 255, 0))
+    WINDOW.blit(battle_instructions, (WIDTH/2 - 200, HEIGHT - 40))
 
 while True:
     # Обработка событий
@@ -140,20 +169,66 @@ while True:
         svenka.move(player_x, player_y)  # В игровом цикле добавляем движение и проверку столкновений
         
         # Проверка столкновений
-        if (svenka.check_collision(player_x, player_y)):  # Добавляем проверку
-            game_over = True
+        if svenka.check_collision(player_x, player_y) and not battle_mode:
+            battle_mode = True
+            current_enemy = svenka
             background_music.stop()
+            battle_music.play(-1)  # Запускаем боевую музыку
+
+        # При выходе из боевого режима
+        if battle_mode and (current_enemy.health <= 0 or (keys[pygame.K_ESCAPE] and random.random() < 0.3)):
+            battle_mode = False
+            current_enemy = None
+            battle_music.stop()
+            background_music.play(-1)
         
-        # Управление звуком
-        if moved and not is_playing:
-            footstep_sound.play(-1)
-            is_playing = True
-        elif not moved and is_playing:
-            footstep_sound.stop()
-            is_playing = False 
+        # Добавляем обработку боевого режима
+        if battle_mode:
+            keys = pygame.key.get_pressed()
+            if battle_timer <= 0:
+                if keys[pygame.K_SPACE]:  # Атака игрока
+                    current_enemy.health -= random.randint(15, 25)
+                    battle_timer = BATTLE_COOLDOWN
+                    
+                    # Ответная атака врага
+                    player_health -= random.randint(10, 20)
+                
+                if keys[pygame.K_ESCAPE]:  # Попытка сбежать
+                    if random.random() < 0.3:  # 30% шанс сбежать
+                        battle_mode = False
+                        current_enemy = None
+                        battle_music.stop()
+                        background_music.play(-1)
+                    else:
+                        player_health -= random.randint(5, 15)  # Урон при неудачной попытке
+                    battle_timer = BATTLE_COOLDOWN
+            
+            battle_timer = max(0, battle_timer - 1)
+            
+            # Проверка окончания боя
+            if current_enemy and current_enemy.health <= 0:
+                battle_mode = False
+                current_enemy.health = 100  # Восстанавливаем здоровье NPC
+                current_enemy = None
+                background_music.play(-1)
+            
+            if player_health <= 0:
+                game_over = True
+                background_music.stop()
     
     # Отрисовка
-    WINDOW.blit(background_image, (0, 0))
+    if battle_mode:
+        WINDOW.blit(background_battle, (0, 0))  # Рисуем боевой фон
+    else:
+        WINDOW.blit(background_image, (0, 0))  # Рисуем обычный фон
+    
+    if battle_mode:
+        # Затемняем фон во время боя
+        battle_surface = pygame.Surface((WIDTH, HEIGHT))
+        battle_surface.fill((0, 0, 0))
+        battle_surface.set_alpha(128)
+        WINDOW.blit(battle_surface, (0, 0))
+        draw_battle_ui()
     
     if not game_over:
         WINDOW.blit(player_image, (player_x, player_y))
