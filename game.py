@@ -14,10 +14,11 @@ WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("my deltarune")
 
 # Загрузка изображений
-background_image = pygame.image.load('krisroom.png')  # Добавляем загрузку фона
+background_image = pygame.image.load('krisroom.png')
 player_image = pygame.image.load('kris.png')
 susie_image = pygame.image.load('susie.png')
 ralsei_image = pygame.image.load('ralsei.png')
+svenka_image = pygame.image.load('svenka.png')  # Добавляем нового NPC
 
 # Размеры персонажей
 player_size = 100
@@ -28,6 +29,7 @@ background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
 player_image = pygame.transform.scale(player_image, (player_size, player_size))
 susie_image = pygame.transform.scale(susie_image, (npc_size, npc_size))
 ralsei_image = pygame.transform.scale(ralsei_image, (npc_size, npc_size))
+svenka_image = pygame.transform.scale(svenka_image, (npc_size, npc_size))  # Масштабирование изображений
 
 
 # Параметры персонажей
@@ -94,7 +96,7 @@ class NPC:
 # Создание NPC с параметром hunting
 susie = NPC(0, 0, susie_image, hunting=False)
 ralsei = NPC(00, 500, ralsei_image, hunting=False)
-zuza = NPC(50, 50, susie_image, hunting=True)
+svenka = NPC(WIDTH - 100, HEIGHT - 100, svenka_image, hunting=True)  # Добавляем злого NPC
 
 # Параметры звука
 footstep_sound = pygame.mixer.Sound('footsteps.mp3')
@@ -135,12 +137,10 @@ while True:
         # Движение NPC к игроку
         susie.move(player_x, player_y)
         ralsei.move(player_x, player_y)
-        zuza.move(player_x, player_y)
+        svenka.move(player_x, player_y)  # В игровом цикле добавляем движение и проверку столкновений
         
         # Проверка столкновений
-        if (susie.check_collision(player_x, player_y) or 
-            ralsei.check_collision(player_x, player_y) or 
-            zuza.check_collision(player_x, player_y)):
+        if (svenka.check_collision(player_x, player_y)):  # Добавляем проверку
             game_over = True
             background_music.stop()
         
@@ -158,8 +158,8 @@ while True:
     if not game_over:
         WINDOW.blit(player_image, (player_x, player_y))
     WINDOW.blit(susie.image, (susie.x, susie.y))
-    WINDOW.blit(susie.image, (zuza.x, zuza.y))
     WINDOW.blit(ralsei.image, (ralsei.x, ralsei.y))
+    WINDOW.blit(svenka.image, (svenka.x, svenka.y))  # В секции отрисовки
     
     if game_over:
         # Отображаем текст Game Over
