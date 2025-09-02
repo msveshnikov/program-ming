@@ -18,7 +18,8 @@ background_image = pygame.image.load('classroom.png')
 player_image = pygame.image.load('kris.png')
 susie_image = pygame.image.load('susie.png')
 ralsei_image = pygame.image.load('ralsei.png')
-svenka_image = pygame.image.load('svenka.png')  # Добавляем нового NPC
+svenka_image = pygame.image.load('svenka.png') 
+svenka_box_image = pygame.image.load('svenka_box.png')
 background_battle = pygame.image.load('background_battle.png')
 background_battle = pygame.transform.scale(background_battle, (WIDTH, HEIGHT))
 
@@ -41,6 +42,7 @@ player_battle_image = pygame.transform.scale(player_image, (player_battle_size, 
 susie_battle_image = pygame.transform.scale(susie_image, (npc_battle_size, npc_battle_size))
 ralsei_battle_image = pygame.transform.scale(ralsei_image, (npc_battle_size, npc_battle_size))
 svenka_battle_image = pygame.transform.scale(svenka_image, (npc_battle_size, npc_battle_size))
+svenka_battle_image2 = pygame.transform.scale(svenka_box_image, (npc_battle_size, npc_battle_size)) 
 
 # Параметры персонажей
 player_x = WIDTH // 2
@@ -271,7 +273,10 @@ while True:
         WINDOW.blit(player_battle_image, (current_player_x, player_battle_y))
         if current_enemy:
             if current_enemy == svenka:
-                WINDOW.blit(svenka_battle_image, (current_enemy_x, enemy_battle_y))
+                if battle_timer % 30 > 15:
+                    WINDOW.blit(svenka_battle_image, (current_enemy_x, enemy_battle_y))
+                else:
+                    WINDOW.blit(svenka_battle_image2, (current_enemy_x, enemy_battle_y))
             elif current_enemy == susie:
                 WINDOW.blit(susie_battle_image, (current_enemy_x, enemy_battle_y))
             elif current_enemy == ralsei:
