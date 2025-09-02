@@ -115,6 +115,7 @@ svenka = NPC(WIDTH - 100, HEIGHT - 100, svenka_image, hunting=True)  # Доба�
 footstep_sound = pygame.mixer.Sound('footsteps.mp3')
 background_music = pygame.mixer.Sound('music.mp3')  # Добавляем фоновую музыку
 battle_music = pygame.mixer.Sound('battle.mp3')
+hit_sound = pygame.mixer.Sound('hit_sound.mp3')
 is_playing = False
 
 # Запускаем фоновую музыку
@@ -201,7 +202,7 @@ while True:
             background_music.stop()
             battle_music.play(-1)  # Запускаем боевую музыку
 
-   # Управление звуком
+        # Управление звуком
         if moved and not is_playing:
             footstep_sound.play(-1)
             is_playing = True
@@ -224,13 +225,15 @@ while True:
                 if keys[pygame.K_z]:  # Атака
                     damage = random.randint(15, 25)
                     current_enemy.health -= damage
-                    enemy_battle_shake = SHAKE_AMOUNT
+                    enemy_battle_shake += SHAKE_AMOUNT
                     battle_timer = BATTLE_COOLDOWN
+                    hit_sound.play()
                     
                     # Ответная атака врага
                     player_damage = random.randint(10, 20)
                     player_health -= player_damage
-                    player_battle_shake = SHAKE_AMOUNT
+                    player_battle_shake += SHAKE_AMOUNT
+                    #hit_sound.play()
         
                 elif keys[pygame.K_x]:  # Лечение
                     player_health = 100  # Полное восстановление здоровья
@@ -239,18 +242,9 @@ while True:
                     # Враг всё равно атакует
                     player_damage = random.randint(10, 20)
                     player_health -= player_damage
-                    player_battle_shake = SHAKE_AMOUNT
+                    #player_battle_shake = SHAKE_AMOUNT
 
-                if keys[pygame.K_ESCAPE]:  # Попытка сбежать
-                    if random.random() < 0.3:  # 30% шанс сбежать
-                        battle_mode = False
-                        current_enemy = None
-                        battle_music.stop()
-                        background_music.play(-1)
-                    else:
-                        player_health -= random.randint(5, 15)  # Урон при неудачной попытке
-                    battle_timer = BATTLE_COOLDOWN
-            
+                
             battle_timer = max(0, battle_timer - 1)
             
             # Проверка окончания боя
@@ -301,7 +295,15 @@ while True:
         text = font.render('Game Over', True, (255, 0, 0))
         text_rect = text.get_rect(center=(WIDTH/2, HEIGHT/2))
         WINDOW.blit(text, text_rect)
-    
+
+    if svenka_defeated and not battle_mode and not game_over:
+        
+        font = pygame.font.Font(None, 174)
+        text = font.render('Terminated', True, (255, 0, 0))
+        text_rect = text.get_rect(center=(WIDTH/2, HEIGHT/2))
+        WINDOW.blit(text, text_rect)
+        background_music.play(-1)
+
     pygame.display.update()
     
     # Ограничение FPS
