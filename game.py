@@ -33,6 +33,14 @@ susie_image = pygame.transform.scale(susie_image, (npc_size, npc_size))
 ralsei_image = pygame.transform.scale(ralsei_image, (npc_size, npc_size))
 svenka_image = pygame.transform.scale(svenka_image, (npc_size, npc_size))  # Масштабирование изображений
 
+player_battle_size = 400
+npc_battle_size = 400
+
+# Создадим масштабированные версии изображений для боя
+player_battle_image = pygame.transform.scale(player_image, (player_battle_size, player_battle_size))
+susie_battle_image = pygame.transform.scale(susie_image, (npc_battle_size, npc_battle_size))
+ralsei_battle_image = pygame.transform.scale(ralsei_image, (npc_battle_size, npc_battle_size))
+svenka_battle_image = pygame.transform.scale(svenka_image, (npc_battle_size, npc_battle_size))
 
 # Параметры персонажей
 player_x = WIDTH // 2
@@ -125,20 +133,34 @@ battle_font = pygame.font.Font(None, 36)
 battle_instructions_font = pygame.font.Font(None, 74)  # Больший шрифт для инструкций
 
 # Функция для отрисовки боевого интерфейса
+def draw_health_bar(x, y, health, max_health, width=200, height=20):
+    ratio = health / max_health
+    pygame.draw.rect(WINDOW, (255, 0, 0), (x, y, width, height))
+    pygame.draw.rect(WINDOW, (0, 255, 0), (x, y, width * ratio, height))
+
 def draw_battle_ui():
     # Отрисовка здоровья игрока
-    player_health_text = battle_font.render(f'Player HP: {player_health}', True, (255, 255, 255))
-    WINDOW.blit(player_health_text, (10, 10))
+    draw_health_bar(50, HEIGHT - 100, player_health, 100)
+    player_health_text = battle_font.render(f'HP: {player_health}', True, (255, 255, 255))
+    WINDOW.blit(player_health_text, (150, HEIGHT - 130))
     
     # Отрисовка здоровья врага
     if current_enemy:
-        enemy_health_text = battle_font.render(f'Enemy HP: {current_enemy.health}', True, (255, 0, 0))
-        WINDOW.blit(enemy_health_text, (WIDTH - 200, 10))
+        draw_health_bar(WIDTH - 250, HEIGHT - 100, current_enemy.health, 100)
+        enemy_health_text = battle_font.render(f'HP: {current_enemy.health}', True, (255, 0, 0))
+        WINDOW.blit(enemy_health_text, (WIDTH - 250, HEIGHT - 130))
     
-    # Инструкции по управлению в бою (увеличенные)
-    battle_instructions = battle_instructions_font.render('SPACE - атака, ESC - побег', True, (255, 255, 0))
-    instructions_rect = battle_instructions.get_rect(center=(WIDTH/2, HEIGHT - 100))
+    battle_instructions = battle_instructions_font.render('Z - атака, ESC - побег', True, (255, 255, 0))
+    instructions_rect = battle_instructions.get_rect(center=(WIDTH/2, HEIGHT - 50))
     WINDOW.blit(battle_instructions, instructions_rect)
+
+# Глобальные переменные для анимации
+player_battle_x = WIDTH // 4 - player_battle_size // 2
+enemy_battle_x = (WIDTH * 3) // 4 - npc_battle_size // 2
+player_battle_shake = 0
+enemy_battle_shake = 0
+SHAKE_AMOUNT = 20
+SHAKE_SPEED = 5
 
 while True:
     # Обработка событий
@@ -188,13 +210,17 @@ while True:
         if battle_mode:
             keys = pygame.key.get_pressed()
             if battle_timer <= 0:
-                if keys[pygame.K_SPACE]:  # Атака игрока
-                    current_enemy.health -= random.randint(15, 25)
+                if keys[pygame.K_z]:  # Изменили SPACE на Z
+                    damage = random.randint(15, 25)
+                    current_enemy.health -= damage
+                    enemy_battle_shake = SHAKE_AMOUNT
                     battle_timer = BATTLE_COOLDOWN
                     
                     # Ответная атака врага
-                    player_health -= random.randint(10, 20)
-                
+                    player_damage = random.randint(10, 20)
+                    player_health -= player_damage
+                    player_battle_shake = SHAKE_AMOUNT
+    
                 if keys[pygame.K_ESCAPE]:  # Попытка сбежать
                     if random.random() < 0.3:  # 30% шанс сбежать
                         battle_mode = False
@@ -220,23 +246,34 @@ while True:
     
     # Отрисовка
     if battle_mode:
-        WINDOW.blit(background_battle, (0, 0))  # Рисуем боевой фон
-    else:
-        WINDOW.blit(background_image, (0, 0))  # Рисуем обычный фон
-    
-    if battle_mode:
-        # Затемняем фон во время боя
-        battle_surface = pygame.Surface((WIDTH, HEIGHT))
-        battle_surface.fill((0, 0, 0))
-        battle_surface.set_alpha(128)
-        WINDOW.blit(battle_surface, (0, 0))
+        WINDOW.blit(background_battle, (0, 0))
+        
+        # Позиционирование персонажей с учетом тряски
+        current_player_x = player_battle_x + player_battle_shake
+        current_enemy_x = enemy_battle_x - enemy_battle_shake
+        player_battle_y = HEIGHT // 2 - player_battle_size // 2
+        enemy_battle_y = HEIGHT // 2 - npc_battle_size // 2
+        
+        # Отрисовка только сражающихся персонажей
+        WINDOW.blit(player_battle_image, (current_player_x, player_battle_y))
+        if current_enemy:
+            if current_enemy == svenka:
+                WINDOW.blit(svenka_battle_image, (current_enemy_x, enemy_battle_y))
+            elif current_enemy == susie:
+                WINDOW.blit(susie_battle_image, (current_enemy_x, enemy_battle_y))
+            elif current_enemy == ralsei:
+                WINDOW.blit(ralsei_battle_image, (current_enemy_x, enemy_battle_y))
+        
         draw_battle_ui()
-    
-    if not game_over:
-        WINDOW.blit(player_image, (player_x, player_y))
-    WINDOW.blit(susie.image, (susie.x, susie.y))
-    WINDOW.blit(ralsei.image, (ralsei.x, ralsei.y))
-    WINDOW.blit(svenka.image, (svenka.x, svenka.y))  # В секции отрисовки
+    else:
+        WINDOW.blit(background_image, (0, 0))
+        if not game_over:
+            WINDOW.blit(player_image, (player_x, player_y))
+            # Отрисовка NPC только вне боевого режима
+            if not battle_mode:
+                WINDOW.blit(susie.image, (susie.x, susie.y))
+                WINDOW.blit(ralsei.image, (ralsei.x, ralsei.y))
+                WINDOW.blit(svenka.image, (svenka.x, svenka.y))
     
     if game_over:
         # Отображаем текст Game Over
