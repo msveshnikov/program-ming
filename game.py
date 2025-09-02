@@ -150,7 +150,8 @@ def draw_battle_ui():
         enemy_health_text = battle_font.render(f'HP: {current_enemy.health}', True, (255, 0, 0))
         WINDOW.blit(enemy_health_text, (WIDTH - 250, HEIGHT - 130))
     
-    battle_instructions = battle_instructions_font.render('Z - атака, ESC - побег', True, (255, 255, 0))
+    # Добавим инструкцию про лечение
+    battle_instructions = battle_instructions_font.render('Z - атака, X - лечение, ESC - побег', True, (255, 255, 0))
     instructions_rect = battle_instructions.get_rect(center=(WIDTH/2, HEIGHT - 50))
     WINDOW.blit(battle_instructions, instructions_rect)
 
@@ -210,7 +211,7 @@ while True:
         if battle_mode:
             keys = pygame.key.get_pressed()
             if battle_timer <= 0:
-                if keys[pygame.K_z]:  # Изменили SPACE на Z
+                if keys[pygame.K_z]:  # Атака
                     damage = random.randint(15, 25)
                     current_enemy.health -= damage
                     enemy_battle_shake = SHAKE_AMOUNT
@@ -220,7 +221,16 @@ while True:
                     player_damage = random.randint(10, 20)
                     player_health -= player_damage
                     player_battle_shake = SHAKE_AMOUNT
-    
+        
+                elif keys[pygame.K_x]:  # Лечение
+                    player_health = 100  # Полное восстановление здоровья
+                    battle_timer = BATTLE_COOLDOWN
+                    
+                    # Враг всё равно атакует
+                    player_damage = random.randint(10, 20)
+                    player_health -= player_damage
+                    player_battle_shake = SHAKE_AMOUNT
+
                 if keys[pygame.K_ESCAPE]:  # Попытка сбежать
                     if random.random() < 0.3:  # 30% шанс сбежать
                         battle_mode = False
@@ -236,7 +246,6 @@ while True:
             # Проверка окончания боя
             if current_enemy and current_enemy.health <= 0:
                 battle_mode = False
-                current_enemy.health = 100  # Восстанавливаем здоровье NPC
                 current_enemy = None
                 background_music.play(-1)
             
