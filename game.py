@@ -122,6 +122,7 @@ current_enemy = None
 battle_timer = 0
 BATTLE_COOLDOWN = 60  # Задержка между атаками (в кадрах)
 battle_font = pygame.font.Font(None, 36)
+battle_instructions_font = pygame.font.Font(None, 74)  # Больший шрифт для инструкций
 
 # Функция для отрисовки боевого интерфейса
 def draw_battle_ui():
@@ -134,9 +135,10 @@ def draw_battle_ui():
         enemy_health_text = battle_font.render(f'Enemy HP: {current_enemy.health}', True, (255, 0, 0))
         WINDOW.blit(enemy_health_text, (WIDTH - 200, 10))
     
-    # Инструкции по управлению в бою
-    battle_instructions = battle_font.render('SPACE - атаковать, ESC - попытаться убежать', True, (255, 255, 0))
-    WINDOW.blit(battle_instructions, (WIDTH/2 - 200, HEIGHT - 40))
+    # Инструкции по управлению в бою (увеличенные)
+    battle_instructions = battle_instructions_font.render('SPACE - атака, ESC - побег', True, (255, 255, 0))
+    instructions_rect = battle_instructions.get_rect(center=(WIDTH/2, HEIGHT - 100))
+    WINDOW.blit(battle_instructions, instructions_rect)
 
 while True:
     # Обработка событий
