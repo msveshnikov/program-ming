@@ -23,8 +23,8 @@ background_battle = pygame.image.load('background_battle.png')
 background_battle = pygame.transform.scale(background_battle, (WIDTH, HEIGHT))
 
 # Размеры персонажей
-player_size = 100
-npc_size = 100
+player_size = 300
+npc_size = 300
 
 # Масштабирование фона под размер окна
 background_image = pygame.transform.scale(background_image, (WIDTH, HEIGHT))
@@ -33,8 +33,8 @@ susie_image = pygame.transform.scale(susie_image, (npc_size, npc_size))
 ralsei_image = pygame.transform.scale(ralsei_image, (npc_size, npc_size))
 svenka_image = pygame.transform.scale(svenka_image, (npc_size, npc_size))  # Масштабирование изображений
 
-player_battle_size = 400
-npc_battle_size = 400
+player_battle_size = 300
+npc_battle_size = 300
 
 # Создадим масштабированные версии изображений для боя
 player_battle_image = pygame.transform.scale(player_image, (player_battle_size, player_battle_size))
@@ -126,6 +126,7 @@ clock = pygame.time.Clock()
 # В начале файла добавим глобальные переменные для боевого режима
 player_health = 100
 battle_mode = False
+svenka_defeated = False  # Флаг, чтобы отслеживать, побеждена ли Свенка
 current_enemy = None
 battle_timer = 0
 BATTLE_COOLDOWN = 60  # Задержка между атаками (в кадрах)
@@ -200,9 +201,18 @@ while True:
             background_music.stop()
             battle_music.play(-1)  # Запускаем боевую музыку
 
+   # Управление звуком
+        if moved and not is_playing:
+            footstep_sound.play(-1)
+            is_playing = True
+        elif not moved and is_playing:
+            footstep_sound.stop()
+            is_playing = False
+
         # При выходе из боевого режима
         if battle_mode and (current_enemy.health <= 0 or (keys[pygame.K_ESCAPE] and random.random() < 0.3)):
             battle_mode = False
+            svenka_defeated = True
             current_enemy = None
             battle_music.stop()
             background_music.play(-1)
@@ -282,7 +292,8 @@ while True:
             if not battle_mode:
                 WINDOW.blit(susie.image, (susie.x, susie.y))
                 WINDOW.blit(ralsei.image, (ralsei.x, ralsei.y))
-                WINDOW.blit(svenka.image, (svenka.x, svenka.y))
+                if not svenka_defeated:
+                    WINDOW.blit(svenka.image, (svenka.x, svenka.y))
     
     if game_over:
         # Отображаем текст Game Over
