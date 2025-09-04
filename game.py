@@ -22,6 +22,7 @@ svenka_image = pygame.image.load('svenka.png')
 svenka_box_image = pygame.image.load('svenka_box.png')
 background_battle = pygame.image.load('background_battle.png')
 background_battle = pygame.transform.scale(background_battle, (WIDTH, HEIGHT))
+ena_image = pygame.image.load('ena.png')
 
 # Размеры персонажей
 player_size = 300
@@ -33,6 +34,7 @@ player_image = pygame.transform.scale(player_image, (player_size, player_size))
 susie_image = pygame.transform.scale(susie_image, (npc_size, npc_size))
 ralsei_image = pygame.transform.scale(ralsei_image, (npc_size, npc_size))
 svenka_image = pygame.transform.scale(svenka_image, (npc_size, npc_size))  # Масштабирование изображений
+ena_image = pygame.transform.scale(ena_image, (npc_size, npc_size))
 
 player_battle_size = 300
 npc_battle_size = 300
@@ -43,6 +45,7 @@ susie_battle_image = pygame.transform.scale(susie_image, (npc_battle_size, npc_b
 ralsei_battle_image = pygame.transform.scale(ralsei_image, (npc_battle_size, npc_battle_size))
 svenka_battle_image = pygame.transform.scale(svenka_image, (npc_battle_size, npc_battle_size))
 svenka_battle_image2 = pygame.transform.scale(svenka_box_image, (npc_battle_size, npc_battle_size)) 
+ena_battle_image = pygame.transform.scale(ena_image, (npc_battle_size, npc_battle_size))
 
 # Параметры персонажей
 player_x = WIDTH // 2
@@ -112,6 +115,7 @@ class NPC:
 susie = NPC(0, 0, susie_image, hunting=False)
 ralsei = NPC(00, 500, ralsei_image, hunting=False)
 svenka = NPC(WIDTH - 100, HEIGHT - 100, svenka_image, hunting=True)  # Добавляем злого NPC
+ena = NPC(WIDTH - 500, HEIGHT - 500, ena_image, hunting=True)
 
 # Параметры звука
 footstep_sound = pygame.mixer.Sound('footsteps.mp3')
@@ -130,6 +134,7 @@ clock = pygame.time.Clock()
 player_health = 100
 battle_mode = False
 svenka_defeated = False  # Флаг, чтобы отслеживать, побеждена ли Свенка
+ena_defeated = False  # Новая переменная для Ena
 current_enemy = None
 battle_timer = 0
 BATTLE_COOLDOWN = 60  # Задержка между атаками (в кадрах)
@@ -195,14 +200,15 @@ while True:
         # Движение NPC к игроку
         susie.move(player_x, player_y)
         ralsei.move(player_x, player_y)
-        svenka.move(player_x, player_y)  # В игровом цикле добавляем движение и проверку столкновений
+        svenka.move(player_x, player_y)
+        ena.move(player_x, player_y)  # Добавляем движение Ena
         
         # Проверка столкновений
-        if svenka.check_collision(player_x, player_y) and not battle_mode:
+        if (svenka.check_collision(player_x, player_y) or ena.check_collision(player_x, player_y)) and not battle_mode:
             battle_mode = True
-            current_enemy = svenka
             background_music.stop()
-            battle_music.play(-1)  # Запускаем боевую музыку
+            battle_music.play(-1)
+            current_enemy = svenka if svenka.check_collision(player_x, player_y) else ena
 
         # Управление звуком
         if moved and not is_playing:
@@ -215,10 +221,14 @@ while True:
         # При выходе из боевого режима
         if battle_mode and (current_enemy.health <= 0 or (keys[pygame.K_ESCAPE] and random.random() < 0.3)):
             battle_mode = False
-            svenka_defeated = True
+            if current_enemy.health <= 0:
+                if current_enemy == svenka:
+                    svenka_defeated = True
+                elif current_enemy == ena:
+                    ena_defeated = True
             current_enemy = None
-            battle_music.stop()
             background_music.play(-1)
+            battle_music.stop()
         
         # Добавляем обработку боевого режима
         if battle_mode:
@@ -277,6 +287,8 @@ while True:
                     WINDOW.blit(svenka_battle_image, (current_enemy_x, enemy_battle_y))
                 else:
                     WINDOW.blit(svenka_battle_image2, (current_enemy_x, enemy_battle_y))
+            elif current_enemy == ena:
+                WINDOW.blit(ena_battle_image, (current_enemy_x, enemy_battle_y))
             elif current_enemy == susie:
                 WINDOW.blit(susie_battle_image, (current_enemy_x, enemy_battle_y))
             elif current_enemy == ralsei:
@@ -287,13 +299,15 @@ while True:
         WINDOW.blit(background_image, (0, 0))
         if not game_over:
             WINDOW.blit(player_image, (player_x, player_y))
-            # Отрисовка NPC только вне боевого режима
+            # Отрисовка NPC только если они не побеждены
             if not battle_mode:
                 WINDOW.blit(susie.image, (susie.x, susie.y))
                 WINDOW.blit(ralsei.image, (ralsei.x, ralsei.y))
                 if not svenka_defeated:
                     WINDOW.blit(svenka.image, (svenka.x, svenka.y))
-    
+                if not ena_defeated:  # Добавим новую переменную
+                    WINDOW.blit(ena.image, (ena.x, ena.y))
+
     if game_over:
         # Отображаем текст Game Over
         font = pygame.font.Font(None, 74)
