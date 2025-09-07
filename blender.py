@@ -19,6 +19,8 @@ class BlenderModelViewer:
         self.mouse_x = 0
         self.mouse_y = 0
         self.mouse_pressed = False
+        self.render_mode = 0  # 0 - красивый градиент, 1 - металлик, 2 - пастельный
+        self.auto_rotate = False
         
     def load_blend_file(self):
         """Загружает .blend файл и извлекает геометрию"""
@@ -70,18 +72,39 @@ class BlenderModelViewer:
         pygame.init()
         display = (800, 600)
         pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-        pygame.display.set_caption("Blender Model Viewer")
+        pygame.display.set_caption("Beautiful Blender Model Viewer")
         
-        # Настройки OpenGL
+        # Настройки OpenGL для красивого рендеринга
         glEnable(GL_DEPTH_TEST)
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
+        glEnable(GL_LIGHT1)
         glEnable(GL_COLOR_MATERIAL)
+        glEnable(GL_NORMALIZE)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glShadeModel(GL_SMOOTH)
+        
+        # Настройка материалов
         glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
         
-        # Настройка освещения
-        glLightfv(GL_LIGHT0, GL_POSITION, [1, 1, 1, 0])
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, [1, 1, 1, 1])
+        # Основное освещение (тёплый белый свет)
+        glLightfv(GL_LIGHT0, GL_POSITION, [2, 3, 5, 1])
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, [1.0, 0.95, 0.8, 1.0])  # Тёплый белый
+        glLightfv(GL_LIGHT0, GL_AMBIENT, [0.3, 0.3, 0.4, 1.0])   # Мягкий синеватый ambient
+        glLightfv(GL_LIGHT0, GL_SPECULAR, [1.0, 1.0, 1.0, 1.0])  # Яркие блики
+        
+        # Дополнительное освещение (заполняющий свет)
+        glLightfv(GL_LIGHT1, GL_POSITION, [-2, -1, 3, 1])
+        glLightfv(GL_LIGHT1, GL_DIFFUSE, [0.4, 0.5, 0.8, 1.0])   # Холодный голубой
+        glLightfv(GL_LIGHT1, GL_AMBIENT, [0.1, 0.1, 0.2, 1.0])
+        
+        # Настройка материала
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [1.0, 1.0, 1.0, 1.0])
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 64.0)
+        
+        # Красивый фон
+        glClearColor(0.1, 0.1, 0.15, 1.0)  # Тёмно-синий фон
         
         # Настройка перспективы
         gluPerspective(45, (display[0]/display[1]), 0.1, 50.0)
@@ -89,49 +112,94 @@ class BlenderModelViewer:
         # Начальная позиция камеры
         glTranslatef(0.0, 0.0, self.zoom)
         
+    def get_vertex_color(self, vertex, face_index, vertex_index_in_face):
+        """Получает цвет вертекса в зависимости от режима рендеринга"""
+        height_factor = (vertex[1] + 2) / 4
+        height_factor = max(0, min(1, height_factor))
+        
+        if self.render_mode == 0:  # Градиент розовый-голубой
+            r = 0.9 - height_factor * 0.4
+            g = 0.3 + height_factor * 0.4
+            b = 0.4 + height_factor * 0.5
+            
+        elif self.render_mode == 1:  # Металлический
+            base_metallic = 0.6 + height_factor * 0.3
+            r = base_metallic * 0.8
+            g = base_metallic * 0.85
+            b = base_metallic * 0.9
+            
+        else:  # Пастельные тона
+            r = 0.8 + height_factor * 0.15
+            g = 0.7 + height_factor * 0.25
+            b = 0.6 + height_factor * 0.35
+        
+        # Добавляем вариацию по граням
+        face_variation = (face_index % 15) / 30.0
+        r += face_variation * 0.1
+        g += face_variation * 0.05
+        b += face_variation * 0.1
+        
+        return (max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, b)))
+        
     def draw_model(self):
-        """Отрисовка 3D модели"""
+        """Отрисовка 3D модели с красивыми материалами"""
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
         glPushMatrix()
+        
+        # Автоповорот если включён
+        if self.auto_rotate:
+            self.rotation_y += 0.5
         
         # Применяем вращение
         glRotatef(self.rotation_x, 1, 0, 0)
         glRotatef(self.rotation_y, 0, 1, 0)
         
-        # Отрисовка модели
+        # Отрисовка модели с красивыми материалами
+        glEnable(GL_LIGHTING)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        
+        # Основные грани с красивыми материалами
         glBegin(GL_TRIANGLES)
-        for face in self.faces:
-            # Вычисляем нормаль для освещения
+        for i, face in enumerate(self.faces):
             if len(face) >= 3:
                 v1 = np.array(self.vertices[face[0]])
                 v2 = np.array(self.vertices[face[1]])
                 v3 = np.array(self.vertices[face[2]])
                 
-                # Вычисляем нормаль
+                # Вычисляем нормаль для освещения
                 normal = np.cross(v2 - v1, v3 - v1)
-                normal = normal / np.linalg.norm(normal)
+                if np.linalg.norm(normal) > 0:
+                    normal = normal / np.linalg.norm(normal)
+                    glNormal3fv(normal)
                 
-                glNormal3fv(normal)
-                
-                # Отрисовываем треугольник
-                for vertex_index in face:
-                    glVertex3fv(self.vertices[vertex_index])
+                # Отрисовываем треугольник с красивыми цветами
+                for j, vertex_index in enumerate(face):
+                    vertex = self.vertices[vertex_index]
+                    r, g, b = self.get_vertex_color(vertex, i, j)
+                    glColor3f(r, g, b)
+                    glVertex3fv(vertex)
         glEnd()
         
-        # Отрисовка wireframe
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-        glColor3f(0.2, 0.2, 0.2)
-        glBegin(GL_TRIANGLES)
+        # Добавляем тонкие контуры для большей детализации
+        glDisable(GL_LIGHTING)
+        glLineWidth(0.8)
+        glColor4f(0.15, 0.15, 0.25, 0.4)  # Полупрозрачные контуры
+        
+        glBegin(GL_LINES)
+        edge_count = 0
         for face in self.faces:
-            for vertex_index in face:
-                glVertex3fv(self.vertices[vertex_index])
+            if len(face) >= 3 and edge_count < len(self.faces) * 2:  # Ограничиваем количество линий
+                for i in range(len(face)):
+                    if (i + edge_count) % 3 == 0:  # Рисуем только каждую третью линию
+                        v1 = self.vertices[face[i]]
+                        v2 = self.vertices[face[(i + 1) % len(face)]]
+                        glVertex3fv(v1)
+                        glVertex3fv(v2)
+                        edge_count += 1
         glEnd()
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        glColor3f(0.8, 0.8, 0.8)
         
         glPopMatrix()
-        
         pygame.display.flip()
     
     def handle_events(self):
@@ -170,6 +238,24 @@ class BlenderModelViewer:
                 elif event.key == pygame.K_MINUS:
                     self.zoom -= 0.5
                     glTranslatef(0, 0, -0.5)
+                elif event.key == pygame.K_SPACE:
+                    # Переключение режима рендеринга
+                    self.render_mode = (self.render_mode + 1) % 3
+                    mode_names = ["Градиент", "Металлик", "Пастель"]
+                    print(f"Режим рендеринга: {mode_names[self.render_mode]}")
+                elif event.key == pygame.K_r:
+                    # Включение/выключение автоповорота
+                    self.auto_rotate = not self.auto_rotate
+                    print(f"Автоповорот: {'включён' if self.auto_rotate else 'выключен'}")
+                elif event.key == pygame.K_h:
+                    # Показать справку
+                    print("\n=== УПРАВЛЕНИЕ ===")
+                    print("Мышь: вращение модели")
+                    print("+/-: приближение/отдаление")
+                    print("SPACE: смена материала")
+                    print("R: автоповорот")
+                    print("H: эта справка")
+                    print("ESC: выход\n")
                     
         return True
     
@@ -183,11 +269,15 @@ class BlenderModelViewer:
         print("Инициализация графики...")
         self.init_pygame()
         
-        print("Запуск viewer'а...")
-        print("Управление:")
-        print("- Левая кнопка мыши + перемещение: вращение модели")
-        print("- + / -: приближение/отдаление")
-        print("- ESC: выход")
+        print("Запуск красивого viewer'а...")
+        print("🎨 УПРАВЛЕНИЕ:")
+        print("🖱️  Левая кнопка мыши + перемещение: вращение модели")
+        print("🔍 + / -: приближение/отдаление")
+        print("🎭 SPACE: смена стиля материала (Градиент/Металлик/Пастель)")
+        print("🔄 R: автоповорот")
+        print("❓ H: показать справку")
+        print("🚪 ESC: выход")
+        print("\nТекущий материал: Градиент (розовый-голубой)")
         
         clock = pygame.time.Clock()
         running = True
