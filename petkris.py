@@ -52,7 +52,7 @@ class DesktopPet:
         # Bind mouse events
         self.label.bind('<Button-1>', self.start_drag)
         self.label.bind('<B1-Motion>', self.on_drag)
-        self.label.bind('<Button-3>', self.quit_program)
+        self.label.bind('<Button-3>', self.show_menu)
         
         # Start animation
         self.animate()
@@ -68,15 +68,15 @@ class DesktopPet:
         #     fart.play()
         # except Exception as e:
         #     print(f"Ошибка воспроизведения звука: {e}")
-
-        # Показать меню действий
-        self.show_menu(event)
+        # ...existing code...
 
     def show_menu(self, event):
         menu = tk.Menu(self.window, tearoff=0)
         menu.add_command(label="Сидеть", command=self.sit)
         menu.add_command(label="Бежать", command=self.run)
         menu.add_command(label="Танцевать", command=self.dance)
+        menu.add_separator()
+        menu.add_command(label="Выйти", command=self.quit_program)
         # Позиционируем меню над питомцем
         x = self.window.winfo_x() + event.x
         y = self.window.winfo_y() + event.y - 40  # чуть выше
@@ -115,7 +115,7 @@ class DesktopPet:
         y = self.window.winfo_y() + event.y - self.y
         self.window.geometry(f'+{x}+{y}')
     
-    def quit_program(self, event):
+    def quit_program(self):
         self.window.quit()
     
     def animate(self):
@@ -170,10 +170,16 @@ class DesktopPet:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    # Первый питомец (Крис)
-    pet_kris = DesktopPet(root, ['l.png', 'r.png'], title="Kris")
-    # Второй питомец (Сьюзи)
+    # Первый питомец (Крис) — сложная анимация ходьбы
+    kris_sprites = [
+        'kris1.png', 'kris2.png', 'kris3.png', 'kris4.png'
+    ]
+    pet_kris = DesktopPet(root, kris_sprites, title="Kris")
+
+    # Второй питомец (Сьюзи) — сложная анимация ходьбы
+    susie_sprites = [
+        'susie1.png', 'susie2.png', 'susie3.png', 'susie4.png'
+    ]
     root2 = tk.Toplevel(root)
-    pet_susie = DesktopPet(root2, ['susiel.png', 'susier.png'], title="Susie")
-    root.mainloop()
+    pet_susie = DesktopPet(root2, susie_sprites, title="Susie")
     root.mainloop()
