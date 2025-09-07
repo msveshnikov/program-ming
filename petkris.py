@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from PIL import Image, ImageTk
 import random
@@ -11,31 +10,28 @@ class DesktopPet:
     def __init__(self, window):
         self.window = window
         self.window.title("Desktop Pet")
-        
         # Make window borderless, stay on top, and transparent
         self.window.overrideredirect(True)
         self.window.attributes('-topmost', True, '-transparentcolor', 'black')
         self.window.configure(bg='black')
-        
         # Load sprites with transparency
         self.sprites = []
         for sprite in ['l.png', 'r.png']:
             image = Image.open(sprite)
-            # Resize image to a larger size (128x128 pixels)
             image = image.resize((128, 128), Image.Resampling.LANCZOS)
-            # Convert image to RGBA if it isn't already
             if image.mode != 'RGBA':
                 image = image.convert('RGBA')
             self.sprites.append(ImageTk.PhotoImage(image))
-        
-        # Create label to display the pet with transparent background
         self.label = tk.Label(window, image=self.sprites[0], bg='black', bd=0)
         self.label.pack()
-        
         # Initialize variables
         self.current_sprite = 0
         self.moving = False
         self.direction = 1  # 1 for right, -1 for left
+        self.running = False
+        self.dancing = False
+        self.move_speed = 2
+        self.move_delay = 50
         
         # Window dimensions
         self.screen_width = self.window.winfo_screenwidth()
@@ -60,10 +56,51 @@ class DesktopPet:
         self.x = event.x
         self.y = event.y
         # Питомец "пукает" при клике
-        
-        fart = pygame.mixer.Sound('fart.mp3')
-        fart.play()
-        
+        # try:
+        #     fart = pygame.mixer.Sound('fart.mp3')
+        #     fart.play()
+        # except Exception as e:
+        #     print(f"Ошибка воспроизведения звука: {e}")
+
+        # Показать меню действий
+        self.show_menu(event)
+
+    def show_menu(self, event):
+        menu = tk.Menu(self.window, tearoff=0)
+        menu.add_command(label="Сидеть", command=self.sit)
+        menu.add_command(label="Бежать", command=self.run)
+        menu.add_command(label="Танцевать", command=self.dance)
+        # Позиционируем меню над питомцем
+        x = self.window.winfo_x() + event.x
+        y = self.window.winfo_y() + event.y - 40  # чуть выше
+        menu.tk_popup(x, y)
+
+    def sit(self):
+        print("Питомец сел!")
+        self.moving = False
+        self.dancing = False
+        self.running = False
+        self.move_speed = 2
+        self.move_delay = 50
+        self.label.configure(image=self.sprites[2])  # если сидячий спрайт — третий
+        self.label.image = self.sprites[2]
+
+    def run(self):
+        print("Питомец бежит!")
+        self.moving = True
+        self.running = True
+        self.dancing = False
+        self.move_speed = 8  # ускорение
+        self.move_delay = 20
+        self.direction = 1
+
+    def dance(self):
+        print("Питомец танцует!")
+        self.moving = True
+        self.dancing = True
+        self.running = False
+        self.move_speed = 10
+        self.move_delay = 30
     
     def on_drag(self, event):
         x = self.window.winfo_x() + event.x - self.x
@@ -95,29 +132,32 @@ class DesktopPet:
     
     def move(self):
         if not self.moving:
-            # Randomly decide to start moving
-            self.moving = random.random() < 0.3
-            if self.moving:
-                self.direction = random.choice([-1, 1])
+            # Randomly decide to start moving (если не сидит)
+            if not self.running and not self.dancing:
+                self.moving = random.random() < 0.3
+                if self.moving:
+                    self.direction = random.choice([-1, 1])
         
         if self.moving:
-            # Move the pet
-            x = self.window.winfo_x() + (2 * self.direction)
+            x = self.window.winfo_x()
             y = self.window.winfo_y()
-            
-            # Check boundaries (adjusted for 128px width)
-            if x < 0 or x > self.screen_width - 128:
-                self.direction *= -1
-                x = max(0, min(x, self.screen_width - 128))
-                self.moving = False
-            
+            if self.dancing:
+                # Хаотичное движение
+                dx = random.randint(-self.move_speed, self.move_speed)
+                dy = random.randint(-self.move_speed, self.move_speed)
+                x += dx
+                y += dy
+            else:
+                # Обычное или ускоренное движение
+                x += self.move_speed * self.direction
+            # Проверка границ
+            x = max(0, min(x, self.screen_width - 128))
+            y = max(0, min(y, self.screen_height - 128))
             self.window.geometry(f'+{x}+{y}')
-            
-            # Randomly stop moving
-            if random.random() < 0.02:
+            # Остановить если не run/dance
+            if not self.running and not self.dancing and random.random() < 0.02:
                 self.moving = False
-        
-        self.window.after(50, self.move)  # Update position every 50ms
+        self.window.after(self.move_delay, self.move)
 
 if __name__ == "__main__":
     root = tk.Tk()
