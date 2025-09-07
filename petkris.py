@@ -7,16 +7,23 @@ import pygame
 pygame.mixer.init()
 
 class DesktopPet:
-    def __init__(self, window):
+    def reset_action(self):
+        self.moving = False
+        self.running = False
+        self.dancing = False
+        self.move_speed = 2
+        self.move_delay = 50
+    def __init__(self, window, sprites, title="Desktop Pet"):
         self.window = window
-        self.window.title("Desktop Pet")
+        self.window.title(title)
         # Make window borderless, stay on top, and transparent
         self.window.overrideredirect(True)
         self.window.attributes('-topmost', True, '-transparentcolor', 'black')
         self.window.configure(bg='black')
         # Load sprites with transparency
+        self.sprite_paths = sprites  # сохраняем пути для зеркалирования
         self.sprites = []
-        for sprite in ['l.png', 'r.png']:
+        for sprite in sprites:
             image = Image.open(sprite)
             image = image.resize((128, 128), Image.Resampling.LANCZOS)
             if image.mode != 'RGBA':
@@ -80,10 +87,9 @@ class DesktopPet:
         self.moving = False
         self.dancing = False
         self.running = False
-        self.move_speed = 2
+        self.move_speed = 0
         self.move_delay = 50
-        self.label.configure(image=self.sprites[2])  # если сидячий спрайт — третий
-        self.label.image = self.sprites[2]
+        self.window.after(3000, self.reset_action)
 
     def run(self):
         print("Питомец бежит!")
@@ -93,6 +99,7 @@ class DesktopPet:
         self.move_speed = 8  # ускорение
         self.move_delay = 20
         self.direction = 1
+        self.window.after(3000, self.reset_action)
 
     def dance(self):
         print("Питомец танцует!")
@@ -101,6 +108,7 @@ class DesktopPet:
         self.running = False
         self.move_speed = 10
         self.move_delay = 30
+        self.window.after(3000, self.reset_action)
     
     def on_drag(self, event):
         x = self.window.winfo_x() + event.x - self.x
@@ -112,12 +120,11 @@ class DesktopPet:
     
     def animate(self):
         # Switch between sprites
-        self.current_sprite = (self.current_sprite + 1) % 2
+        self.current_sprite = (self.current_sprite + 1) % len(self.sprites)
         # Отразить изображение, если идём вправо
         if self.direction == 1:
-            # Получаем исходное изображение
             from PIL import ImageOps
-            sprite_path = ['l.png', 'r.png'][self.current_sprite]
+            sprite_path = self.sprite_paths[self.current_sprite]
             image = Image.open(sprite_path)
             image = image.resize((128, 128), Image.Resampling.LANCZOS)
             if image.mode != 'RGBA':
@@ -128,6 +135,7 @@ class DesktopPet:
             self.label.image = mirrored_sprite  # чтобы не удалялось GC
         else:
             self.label.configure(image=self.sprites[self.current_sprite])
+            self.label.image = self.sprites[self.current_sprite]
         self.window.after(200, self.animate)  # Change sprite every 200ms
     
     def move(self):
@@ -137,6 +145,7 @@ class DesktopPet:
                 self.moving = random.random() < 0.3
                 if self.moving:
                     self.direction = random.choice([-1, 1])
+                    self.move_speed = 2  # восстановить обычную скорость
         
         if self.moving:
             x = self.window.winfo_x()
@@ -161,5 +170,10 @@ class DesktopPet:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    pet = DesktopPet(root)
+    # Первый питомец (Крис)
+    pet_kris = DesktopPet(root, ['l.png', 'r.png'], title="Kris")
+    # Второй питомец (Сьюзи)
+    root2 = tk.Toplevel(root)
+    pet_susie = DesktopPet(root2, ['susiel.png', 'susier.png'], title="Susie")
+    root.mainloop()
     root.mainloop()
