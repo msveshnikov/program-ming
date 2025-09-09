@@ -327,7 +327,7 @@ class DesktopPet:
     def move(self):
         if not self.moving:
             # Randomly decide to start moving (если не сидит)
-            if not self.running and not self.dancing and not self.sitting:
+            if not self.running and not self.dancing and not self.sitting and not self.eating:
                 self.moving = random.random() < 0.3
                 if self.moving:
                     self.direction = random.choice([-1, 1])
