@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чтение файлов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .file-input-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .file-input-container:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        button {
+            background-color: #f52eff;
+            color: white;
+            padding: 40px 40px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 30px;
+            margin: 15px;
+        }
+        
+        button:hover {
+            background-color: #8600b3;
+        }
+        
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .output {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            min-height: 100px;
+        }
+        
+        .file-info {
+            background-color: #e7f3ff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* Галерея для 10 картинок */
+        .gallery {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            align-items: start;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: auto;
+            border-radius: 6px;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+            background: #eee;
+        }
+
+        /* Полноэкранный слой для рандомного размещения картинок */
+        .spamton-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none; /* не блокирует остальной UI */
+            z-index: 9999;
+        }
+
+        .spamton-layer img {
+            position: absolute;
+            width: 120px; /* фикс. ширина для расчёта позиционирования */
+            height: auto;
+            pointer-events: auto; /* по картинкам можно кликать */
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Чтение файлов с JavaScript</h1>
+        <img src="https://ena.wiki.gg/images/EnaPoP.png?b00df8">
+        <img src="https://media.tenor.com/MkXy-V6Du3sAAAAM/ena-joel-g.gif">
+        <div class="file-input-container">
+            <p>Выберите файл для чтения:</p>
+            <input type="file" id="fileInput" accept=".txt,.json,.csv,.log,.md">
+            
+        
+            <br>
+            <button onclick="readFile()">Read file</button>
+            <button onclick="clearOutput()">Clear output</button>
+            <button onclick="youaregoat()">ты козёл</button>
+        </div>
+        
+        <div id="output" class="output">
+            <p>Здесь будет отображено содержимое файла...</p>
+        </div>
+
+        <!-- Галерея с 10 изображениями будет заполняться по нажатию кнопки "ты козёл" -->
+        <div id="spamton-gallery" class="gallery" aria-live="polite"></div>
+    </div>
+
+    <!-- Полноэкранный слой для рандомного размещения -->
+    <div id="spamton-layer" class="spamton-layer" aria-hidden="true"></div>
+
+    <script>
+        // Глобальная переменная для хранения выбранного файла
+        let selectedFile = null;
+        const SPAMTON_SRC = 'https://media.tenor.com/VKtdJknsMycAAAAM/spamton-deltarune.gif';
+        
+        // Обработчик изменения файла
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            selectedFile = event.target.files[0];
+            if (selectedFile) {
+                displayFileInfo(selectedFile);
+            }
+        });
+
+
+        function youaregoat() {
+            // По нажатию создаём 10 картинок в случайных местах экрана
+            spawnSpamtonsRandom(10000);
+        }
+
+        // Создаёт n изображений в случайных местах экрана (каждый клик — новые позиции)
+        function spawnSpamtonsRandom(n ) {
+            const layer = document.getElementById('spamton-layer');
+            if (!layer) return;
+            // Очищаем предыдущие
+            layer.innerHTML = '';
+
+            const imgWidth = 120; // синхронизировано со стилем
+            const imgHeight = 120; // приблизительная высота для расчёта нижней границы
+
+            const maxX = Math.max((window.innerWidth || document.documentElement.clientWidth) - imgWidth, 0);
+            const maxY = Math.max((window.innerHeight || document.documentElement.clientHeight) - imgHeight, 0);
+
+            for (let i = 0; i < n; i++) {
+                const img = new Image();
+                img.src = SPAMTON_SRC;
+                img.alt = `Spamton ${i + 1}`;
+                img.loading = 'eager';
+                const left = Math.floor(Math.random() * (maxX + 1));
+                const top = Math.floor(Math.random() * (maxY + 1));
+                img.style.left = left + 'px';
+                img.style.top = top + 'px';
+
+                // Небольшая случайная ротация для разнообразия
+                const angle = (Math.random() * 16) - 8; // -8..8°
+                const scale = 0.9 + Math.random() * 0.3; // 0.9..1.2
+                img.style.transform = `rotate(${angle}deg) scale(${scale})`;
+
+                layer.appendChild(img);
+            }
+        }
+
+        // Создаёт 10 изображений с заданным адресом (если ещё не созданы)
+        function ensureSpamtonGallery() {
+            const gallery = document.getElementById('spamton-gallery');
+            if (!gallery) return;
+
+            // Не дублируем, если уже добавлены
+            if (gallery.childElementCount === 0) {
+                for (let i = 0; i < 10; i++) {
+                    const img = new Image();
+                    img.src = SPAMTON_SRC;
+                    img.alt = `Spamton ${i + 1}`;
+                    img.loading = 'lazy';
+                    gallery.appendChild(img);
+                }
+            }
+            // Прокрутка к галерее
+            gallery.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Функция для отображения информации о файле
+        function displayFileInfo(file) {
+            const output = document.getElementById('output');
+            const fileSize = (file.size / 1024).toFixed(2); // размер в KB
+            
+            output.innerHTML = `
+                <div class="file-info">
+                    <h3>Информация о файле:</h3>
+                    <p><strong>Название:</strong> ${file.name}</p>
+                    <p><strong>Размер:</strong> ${fileSize} KB</p>
+                    <p><strong>Тип:</strong> ${file.type || 'Неизвестный'}</p>
+                    <p><strong>Последнее изменение:</strong> ${new Date(file.lastModified).toLocaleString('ru-RU')}</p>
+                </div>
+                <p>Нажмите "Прочитать файл" для отображения содержимого.</p>
+            `;
+        }
+        
+        // Основная функция для чтения файла
+        function readFile() {
+            if (!selectedFile) {
+                showError('Пожалуйста, выберите файл!');
+                return;
+            }
+            
+            const reader = new FileReader();
+            const output = document.getElementById('output');
+            
+            // Показываем индикатор загрузки
+            output.innerHTML = '<p>Читаем файл...</p>';
+            
+            // Обработчик успешного чтения
+            reader.onload = function(e) {
+                const content = e.target.result;
+                displayFileContent(content);
+            };
+            
+            // Обработчик ошибки
+            reader.onerror = function(e) {
+                showError('Ошибка при чтении файла: ' + e.target.error);
+            };
+            
+            // Обработчик прогресса (для больших файлов)
+            reader.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percentLoaded = Math.round((e.loaded / e.total) * 100);
+                    output.innerHTML = `<p>Загружено: ${percentLoaded}%</p>`;
+                }
+            };
+            
+            // Начинаем чтение файла как текст
+            reader.readAsText(selectedFile, 'UTF-8');
+        }
+        
+        // Функция для отображения содержимого файла
+        function displayFileContent(content) {
+            const output = document.getElementById('output');
+            const fileInfo = selectedFile ? `
+                <div class="file-info">
+                    <h3>Содержимое файла: ${selectedFile.name}</h3>
+                    <p>Размер содержимого: ${content.length} символов</p>
+                </div>
+            ` : '';
+            
+            // Проверяем, является ли содержимое JSON
+            let formattedContent = content;
+            try {
+                if (selectedFile.name.endsWith('.json')) {
+                    const jsonData = JSON.parse(content);
+                    formattedContent = JSON.stringify(jsonData, null, 2);
+                }
+            } catch (e) {
+                // Если не JSON, оставляем как есть
+            }
+            
+            output.innerHTML = `
+                ${fileInfo}
+                <pre>${escapeHtml(formattedContent)}</pre>
+            `;
+        }
+        
+        // Функция для экранирования HTML символов
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Функция для отображения ошибок
+        function showError(message) {
+            const output = document.getElementById('output');
+            output.innerHTML = `<div class="error">${message}</div>`;
+        }
+        
+        // Функция для очистки вывода
+        function clearOutput() {
+            const output = document.getElementById('output');
+            const fileInput = document.getElementById('fileInput');
+            
+            output.innerHTML = '<p>Здесь будет отображено содержимое файла...</p>';
+            fileInput.value = '';
+            selectedFile = null;
+        }
+        
+        // Дополнительные обработчики для drag & drop
+        const container = document.querySelector('.file-input-container');
+        
+        container.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            container.style.borderColor = '#007bff';
+            container.style.backgroundColor = '#e7f3ff';
+        });
+        
+        container.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            container.style.borderColor = '#ccc';
+            container.style.backgroundColor = 'transparent';
+        });
+        
+        container.addEventListener('drop', function(e) {
+            e.preventDefault();
+            container.style.borderColor = '#ccc';
+            container.style.backgroundColor = 'transparent';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById('fileInput');
+                fileInput.files = files;
+                selectedFile = files[0];
+                displayFileInfo(selectedFile);
+            }
+        });
+    </script>
+</body>
+</html>

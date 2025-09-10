@@ -16,13 +16,14 @@ class DesktopPet:
         self.dancing = False
         self.sitting = False
         self.eating = False
+        self.posing = False
+        self.eating_sprite_index = 0
         self.move_speed = 2
         self.move_delay = 50
 
     def __init__(self, window, sprites, title="Desktop Pet"):
         self.window = window
         self.window.title(title)
-        self.eating = False
         # Make window borderless, stay on top, and transparent
         self.window.overrideredirect(True)
         self.window.attributes('-topmost', True, '-transparentcolor', 'black')
@@ -37,18 +38,40 @@ class DesktopPet:
                 image = image.convert('RGBA')
             self.sprites.append(ImageTk.PhotoImage(image))
 
-        self.eating_sprite = None
+        self.eating_sprites = []
+        self.eating_sprite_index = 0
         if title == "Susie":  # Only for Susie pet
             try:
-                eat_image = Image.open('susie_eat/susie_eat1.png')
-                eat_image = eat_image.resize((128, 128), Image.Resampling.LANCZOS)
-                if eat_image.mode != 'RGBA':
-                    eat_image = eat_image.convert('RGBA')
-                self.eating_sprite = ImageTk.PhotoImage(eat_image)
+                # Load all 4 eating sprites
+                for i in range(1, 5):
+                    eat_image = Image.open(f'susie_eat/susie_eat{i}.png')
+                    eat_image = eat_image.resize((128, 128), Image.Resampling.LANCZOS)
+                    if eat_image.mode != 'RGBA':
+                        eat_image = eat_image.convert('RGBA')
+                    self.eating_sprites.append(ImageTk.PhotoImage(eat_image))
+            except FileNotFoundError as e:
+                print(f"Eating sprites not found: {e}, using default sprites")
+
+        self.posing_sprite = None
+        if title == "Susie":  # Only for Susie pet
+            try:
+                pose_image = Image.open('susie_pose.png')
+                pose_image = pose_image.resize((128, 128), Image.Resampling.LANCZOS)
+                if pose_image.mode != 'RGBA':
+                    pose_image = pose_image.convert('RGBA')
+                self.posing_sprite = ImageTk.PhotoImage(pose_image)
             except FileNotFoundError:
-                print("susie_eat/susie_eat1.png not found, using default sprites")
-        
-        
+                print("susie_pose.png not found, using default sprites")
+        if title == "Kris":  # Only for Kris pet
+            try:   
+                pose_image = Image.open('kris_pose.png')
+                pose_image = pose_image.resize((128, 128), Image.Resampling.LANCZOS)
+                if pose_image.mode != 'RGBA':
+                    pose_image = pose_image.convert('RGBA')
+                self.posing_sprite = ImageTk.PhotoImage(pose_image)
+            except FileNotFoundError:
+                print("kris_pose.png not found, using default sprites")
+
         # Load sitting sprite if available
         self.sitting_sprite = None
         if title == "Kris":  # Only for Kris pet
@@ -60,16 +83,39 @@ class DesktopPet:
                 self.sitting_sprite = ImageTk.PhotoImage(sit_image)
             except FileNotFoundError:
                 print("kris_sit.png not found, using default sprites")
-        
+        if title == "Susie":  # Only for Susie pet
+            try:
+                sit_image = Image.open('susie_sit.png')
+                sit_image = sit_image.resize((128, 128), Image.Resampling.LANCZOS)
+                if sit_image.mode != 'RGBA':
+                    sit_image = sit_image.convert('RGBA')
+                self.sitting_sprite = ImageTk.PhotoImage(sit_image)
+            except FileNotFoundError:
+                print("susie_sit.png not found, using default sprites")
+
+        # self.posing_sprite = None
+        # if title == "Kris":  # Only for Kris pet
+        #     try:
+        #         pose_image = Image.open('kris_pose.png')
+        #         pose_image = pose_image.resize((128, 128), Image.Resampling.LANCZOS)
+        #         if pose_image.mode != 'RGBA':
+        #             pose_image = pose_image.convert('RGBA')
+        #         self.posing_sprite = ImageTk.PhotoImage(pose_image)
+        #     except FileNotFoundError:
+        #         print("kris_pose.png not found, using default sprites")
+
         self.label = tk.Label(window, image=self.sprites[0], bg='black', bd=0)
         self.label.pack()
         # Initialize variables
         self.current_sprite = 0
+        self.eating_sprite_index = 0
         self.moving = False
         self.direction = 1  # 1 for right, -1 for left
         self.running = False
         self.dancing = False
         self.sitting = False
+        self.posing = False
+        self.eating = False
         self.move_speed = 2
         self.move_delay = 50
         
@@ -117,12 +163,14 @@ class DesktopPet:
         menu.add_command(label="Сидеть", command=self.sit)
         menu.add_command(label="Бежать", command=self.run)
         menu.add_command(label="Танцевать", command=self.dance)
-        menu.add_command(label="Лежать", command=self.lie_down)
+        menu.add_command(label="Позировать", command=self.pose)
         menu.add_command(label="Стоять", command=self.stand)
         menu.add_command(label="Гулять", command=self.walk)
         menu.add_command(label="Спать", command=self.sleep)
         menu.add_command(label="Есть", command=self.eat)
         menu.add_command(label="Пить", command=self.drink)
+        # if title == "Susie":
+        #     menu.add_command(label="Rude Buster", command=self.rude_buster)
         menu.add_separator()
         
         # Подменю для смены фона
@@ -169,13 +217,15 @@ class DesktopPet:
         self.move_delay = 30
         self.window.after(200000, self.reset_action)
 
-    def lie_down(self):
-        print("Питомец лежит!")
+    def pose(self):
+        print("Питомец позирует!")
         self.moving = False
         self.dancing = False
         self.running = False
+        self.sitting = False
+        self.posing = True
         self.move_speed = 0
-        self.window.after(5000, self.reset_action)
+        self.window.after(3000, self.reset_action)
 
     def stand(self):
         print("Питомец стоит!")
@@ -301,9 +351,15 @@ class DesktopPet:
         if self.sitting and self.sitting_sprite:
             self.label.configure(image=self.sitting_sprite)
             self.label.image = self.sitting_sprite
-        elif self.eating and self.eating_sprite:
-            self.label.configure(image=self.eating_sprite)
-            self.label.image = self.eating_sprite
+        elif self.eating and self.eating_sprites:
+            # Animate eating with all 4 sprites
+            self.eating_sprite_index = (self.eating_sprite_index + 1) % len(self.eating_sprites)
+            current_eating_sprite = self.eating_sprites[self.eating_sprite_index]
+            self.label.configure(image=current_eating_sprite)
+            self.label.image = current_eating_sprite
+        elif self.posing and self.posing_sprite:
+            self.label.configure(image=self.posing_sprite)
+            self.label.image = self.posing_sprite
         else:
             # Switch between sprites
             self.current_sprite = (self.current_sprite + 1) % len(self.sprites)
@@ -327,7 +383,7 @@ class DesktopPet:
     def move(self):
         if not self.moving:
             # Randomly decide to start moving (если не сидит)
-            if not self.running and not self.dancing and not self.sitting and not self.eating:
+            if not self.running and not self.dancing and not self.sitting and not self.eating and not self.posing:
                 self.moving = random.random() < 0.3
                 if self.moving:
                     self.direction = random.choice([-1, 1])
