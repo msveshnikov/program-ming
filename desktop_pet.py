@@ -1,4 +1,5 @@
 import tkinter as tk
+from turtle import title
 from PIL import Image, ImageTk
 import random
 import os
@@ -17,11 +18,13 @@ class DesktopPet:
         self.sitting = False
         self.eating = False
         self.posing = False
+        self.pirouetting = False
         self.eating_sprite_index = 0
         self.move_speed = 2
         self.move_delay = 50
 
     def __init__(self, window, sprites, title="Desktop Pet"):
+        self.title = title
         self.window = window
         self.window.title(title)
         # Make window borderless, stay on top, and transparent
@@ -93,17 +96,23 @@ class DesktopPet:
             except FileNotFoundError:
                 print("susie_sit.png not found, using default sprites")
 
-        # self.posing_sprite = None
-        # if title == "Kris":  # Only for Kris pet
-        #     try:
-        #         pose_image = Image.open('kris_pose.png')
-        #         pose_image = pose_image.resize((128, 128), Image.Resampling.LANCZOS)
-        #         if pose_image.mode != 'RGBA':
-        #             pose_image = pose_image.convert('RGBA')
-        #         self.posing_sprite = ImageTk.PhotoImage(pose_image)
-        #     except FileNotFoundError:
-        #         print("kris_pose.png not found, using default sprites")
+        self.pirouetting_sprites = []
+        self.pirouetting_sprite_index = 0
+        if title == "Kris":  # Only for Kris pet
+            try:
+                # Load all pirouette sprites
+                for i in range(1, 7):
+                    ballet_image = Image.open(f'kris_ballet/kris_ballet{i}.png')
+                    ballet_image = ballet_image.resize((128, 128), Image.Resampling.LANCZOS)
+                    if ballet_image.mode != 'RGBA':
+                        ballet_image = ballet_image.convert('RGBA')
+                    self.pirouetting_sprites.append(ImageTk.PhotoImage(ballet_image))
+            except FileNotFoundError as e:
+                print(f"Pirouette sprites not found: {e}, using default sprites")
 
+
+        
+        
         self.label = tk.Label(window, image=self.sprites[0], bg='black', bd=0)
         self.label.pack()
         # Initialize variables
@@ -116,6 +125,7 @@ class DesktopPet:
         self.sitting = False
         self.posing = False
         self.eating = False
+        self.pirouetting = False
         self.move_speed = 2
         self.move_delay = 50
         
@@ -133,12 +143,7 @@ class DesktopPet:
         self.label.bind('<B1-Motion>', self.on_drag)
         self.label.bind('<Button-3>', self.show_menu)
         
-        # Bind keyboard events for background changing
-        # self.window.bind('<Control-b>', lambda e: self.change_background_random())
-        # self.window.bind('<Control-1>', lambda e: self.change_background_specific("classroom.png"))
-        # self.window.bind('<Control-2>', lambda e: self.change_background_specific("background_battle.png"))
-        # self.window.bind('<Control-3>', lambda e: self.change_background_specific("Krisroom.png"))
-        
+       
         # Make window focusable for keyboard events
         self.window.focus_set()
         
@@ -150,14 +155,7 @@ class DesktopPet:
         self.moving = False
         self.x = event.x
         self.y = event.y
-        # Питомец "пукает" при клике
-        # try:
-        #     fart = pygame.mixer.Sound('fart.mp3')
-        #     fart.play()
-        # except Exception as e:
-        #     print(f"Ошибка воспроизведения звука: {e}")
-        # ...existing code...
-
+       
     def show_menu(self, event):
         menu = tk.Menu(self.window, tearoff=0)
         menu.add_command(label="Сидеть", command=self.sit)
@@ -168,19 +166,12 @@ class DesktopPet:
         menu.add_command(label="Гулять", command=self.walk)
         menu.add_command(label="Спать", command=self.sleep)
         menu.add_command(label="Есть", command=self.eat)
-        menu.add_command(label="Пить", command=self.drink)
-        # if title == "Susie":
-        #     menu.add_command(label="Rude Buster", command=self.rude_buster)
+        if self.title == "Kris":
+            menu.add_command(label="Сделать пируэт", command=self.pirouette)
+        
         menu.add_separator()
         
-        # Подменю для смены фона
-        # background_menu = tk.Menu(menu, tearoff=0)
-        # background_menu.add_command(label="Случайный фон", command=self.change_background_random)
-        # background_menu.add_command(label="Фон из класса", command=lambda: self.change_background_specific("classroom.png"))
-        # background_menu.add_command(label="Фон битвы", command=lambda: self.change_background_specific("background_battle.png"))
-        # background_menu.add_command(label="Комната Криса", command=lambda: self.change_background_specific("Krisroom.png"))
-        
-        # menu.add_cascade(label="Сменить фон", menu=background_menu)
+       
         # menu.add_separator()
         menu.add_command(label="Выйти", command=self.quit_program)
         # Позиционируем меню над питомцем
@@ -266,77 +257,19 @@ class DesktopPet:
         self.move_speed = 0
         self.window.after(3000, self.reset_action)
 
-    # def set_wallpaper(self, image_path):
-    #     """Изменяет фоновое изображение рабочего стола Windows"""
-    #     try:
-    #         # Константы для Windows API
-    #         SPI_SETDESKWALLPAPER = 0x0014
-    #         SPIF_UPDATEINIFILE = 0x01
-    #         SPIF_SENDCHANGE = 0x02
-            
-    #         # Проверяем, существует ли файл
-    #         if not os.path.exists(image_path):
-    #             print(f"Файл {image_path} не найден!")
-    #             return False
-            
-    #         # Получаем абсолютный путь
-    #         abs_path = os.path.abspath(image_path)
-            
-    #         # Копируем изображение в папку пользователя (иногда требуется)
-    #         user_folder = os.path.expanduser("~")
-    #         wallpaper_folder = os.path.join(user_folder, "Desktop_Wallpapers")
-    #         if not os.path.exists(wallpaper_folder):
-    #             os.makedirs(wallpaper_folder)
-            
-    #         wallpaper_path = os.path.join(wallpaper_folder, os.path.basename(image_path))
-    #         shutil.copy2(abs_path, wallpaper_path)
-            
-    #         # Устанавливаем обои через Windows API
-    #         result = ctypes.windll.user32.SystemParametersInfoW(
-    #             SPI_SETDESKWALLPAPER,
-    #             0,
-    #             wallpaper_path,
-    #             SPIF_UPDATEINIFILE | SPIF_SENDCHANGE
-    #         )
-            
-    #         if result:
-    #             print(f"Фон рабочего стола изменён на: {wallpaper_path}")
-    #             return True
-    #         else:
-    #             print("Не удалось изменить фон рабочего стола")
-    #             return False
-                
-    #     except Exception as e:
-    #         print(f"Ошибка при изменении фона: {e}")
-    #         return False
+    def pirouette(self):
+        print("Питомец делает пируэт!")
+        self.moving = False
+        self.dancing = False
+        self.running = False
+        self.sitting = False
+        self.posing = False
+        self.eating = False
+        self.pirouetting = True
+        self.move_speed = 0
+        self.window.after(5000, self.reset_action)
 
-    # def change_background_random(self):
-    #     """Меняет фон на случайное изображение из рабочей папки"""
-    #     # Список поддерживаемых форматов изображений
-    #     image_extensions = ['.png', '.jpg', '.jpeg', '.bmp', '.gif']
-        
-    #     # Получаем все изображения в текущей папке
-    #     current_dir = os.path.dirname(os.path.abspath(__file__))
-    #     image_files = []
-        
-    #     for file in os.listdir(current_dir):
-    #         if any(file.lower().endswith(ext) for ext in image_extensions):
-    #             image_files.append(os.path.join(current_dir, file))
-        
-        # if image_files:
-        #     # Выбираем случайное изображение
-        #     selected_image = random.choice(image_files)
-        #     print(f"Выбрано изображение: {os.path.basename(selected_image)}")
-        #     return self.set_wallpaper(selected_image)
-        # else:
-        #     print("В папке не найдено подходящих изображений!")
-        #     return False
-
-    # def change_background_specific(self, filename):
-    #     """Меняет фон на конкретное изображение"""
-    #     current_dir = os.path.dirname(os.path.abspath(__file__))
-    #     image_path = os.path.join(current_dir, filename)
-    #     return self.set_wallpaper(image_path)
+   
     
     def on_drag(self, event):
         x = self.window.winfo_x() + event.x - self.x
@@ -357,6 +290,12 @@ class DesktopPet:
             current_eating_sprite = self.eating_sprites[self.eating_sprite_index]
             self.label.configure(image=current_eating_sprite)
             self.label.image = current_eating_sprite
+        elif self.pirouetting and self.pirouetting_sprites:
+            # Animate pirouette with all ballet sprites
+            self.pirouetting_sprite_index = (self.pirouetting_sprite_index + 1) % len(self.pirouetting_sprites)
+            current_pirouetting_sprite = self.pirouetting_sprites[self.pirouetting_sprite_index]
+            self.label.configure(image=current_pirouetting_sprite)
+            self.label.image = current_pirouetting_sprite
         elif self.posing and self.posing_sprite:
             self.label.configure(image=self.posing_sprite)
             self.label.image = self.posing_sprite
@@ -383,7 +322,7 @@ class DesktopPet:
     def move(self):
         if not self.moving:
             # Randomly decide to start moving (если не сидит)
-            if not self.running and not self.dancing and not self.sitting and not self.eating and not self.posing:
+            if not self.running and not self.dancing and not self.sitting and not self.eating and not self.posing and not self.pirouetting:
                 self.moving = random.random() < 0.3
                 if self.moving:
                     self.direction = random.choice([-1, 1])
