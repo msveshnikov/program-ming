@@ -20,6 +20,7 @@ class DesktopPet:
         self.posing = False
         self.wiggling = False
         self.pirouetting = False
+        self.becoming_dog = False
         self.eating_sprite_index = 0
         self.move_speed = 2
         self.move_delay = 50
@@ -75,6 +76,27 @@ class DesktopPet:
                 self.posing_sprite = ImageTk.PhotoImage(pose_image)
             except FileNotFoundError:
                 print("kris_pose.png not found, using default sprites")
+
+        self,becoming_dog_sprite = None
+        if title == "Susie":  # Only for Susie pet
+            try:
+                dog_image = Image.open('susie_dog.png')
+                dog_image = dog_image.resize((128, 128), Image.Resampling.LANCZOS)
+                if dog_image.mode != 'RGBA':
+                    dog_image = dog_image.convert('RGBA')
+                self.becoming_dog_sprite = ImageTk.PhotoImage(dog_image)
+            except FileNotFoundError:
+                print("susie_dog.png not found, using default sprites")
+        if title == "Kris":  # Only for Kris pet
+            try:
+                dog_image = Image.open('kris_dog.png')
+                dog_image = dog_image.resize((128, 128), Image.Resampling.LANCZOS)
+                if dog_image.mode != 'RGBA':
+                    dog_image = dog_image.convert('RGBA')
+                self.becoming_dog_sprite = ImageTk.PhotoImage(dog_image)
+            except FileNotFoundError:
+                print("kris_dog.png not found, using default sprites")          
+
 
         # Load sitting sprite if available
         self.sitting_sprite = None
@@ -141,6 +163,7 @@ class DesktopPet:
         self.eating = False
         self.pirouetting = False
         self.wiggling = False
+        self.becoming_dog = False
          # Movement speed and delay
         self.move_speed = 2
         self.move_delay = 50
@@ -181,6 +204,7 @@ class DesktopPet:
         menu.add_command(label="Танцевать", command=self.dance)
         menu.add_command(label="Позировать", command=self.pose)
         menu.add_command(label="Гулять", command=self.walk)
+        menu.add_command(label="Стать собакой", command=self.become_dog)
         if self.title == "Susie":
             menu.add_command(label="Есть", command=self.eat)
         if self.title == "Kris":
@@ -291,6 +315,20 @@ class DesktopPet:
         self.move_speed = 0 
         self.window.after(10000, self.reset_action)
 
+    def become_dog(self):
+        print("Питомец становится собакой!")
+        self.moving = False
+        self.dancing = False
+        self.running = False
+        self.sitting = False
+        self.posing = False
+        self.eating = False
+        self.pirouetting = False 
+        self.wiggling = False
+        self.becoming_dog = True
+        self.move_speed = 0 
+        self.window.after(20000, self.reset_action)
+
        
     def on_drag(self, event):
         x = self.window.winfo_x() + event.x - self.x
@@ -309,6 +347,9 @@ class DesktopPet:
         if self.sitting and self.sitting_sprite:
             self.label.configure(image=self.sitting_sprite)
             self.label.image = self.sitting_sprite
+        elif self.becoming_dog and self.becoming_dog_sprite:
+            self.label.configure(image=self.becoming_dog_sprite)
+            self.label.image = self.becoming_dog_sprite
         elif self.eating and self.eating_sprites:
             # Animate eating with all 4 sprites
             self.eating_sprite_index = (self.eating_sprite_index + 1) % len(self.eating_sprites)
@@ -329,6 +370,7 @@ class DesktopPet:
             current_wiggling_sprite = self.wiggling_sprites[self.wiggling_sprite_index]
             self.label.configure(image=current_wiggling_sprite)
             self.label.image = current_wiggling_sprite
+        
         else:
             # Switch between sprites
             self.current_sprite = (self.current_sprite + 1) % len(self.sprites)
@@ -352,7 +394,7 @@ class DesktopPet:
     def move(self):
         if not self.moving:
             # Randomly decide to start moving (если не сидит)
-            if not self.running and not self.dancing and not self.sitting and not self.eating and not self.posing and not self.pirouetting and not self.wiggling:
+            if not self.running and not self.dancing and not self.sitting and not self.eating and not self.posing and not self.pirouetting and not self.wiggling and not self.becoming_dog:
                 self.moving = random.random() < 0.3
                 if self.moving:
                     self.direction = random.choice([-1, 1])
