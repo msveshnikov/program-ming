@@ -18,6 +18,7 @@ class DesktopPet:
         self.sitting = False
         self.eating = False
         self.posing = False
+        self.wiggling = False
         self.pirouetting = False
         self.eating_sprite_index = 0
         self.move_speed = 2
@@ -110,6 +111,19 @@ class DesktopPet:
             except FileNotFoundError as e:
                 print(f"Pirouette sprites not found: {e}, using default sprites")
 
+        self.wiggling_sprites = []
+        self.wiggling_sprite_index = 0
+        if title == "Kris":
+            try:
+                for i in range(1, 5):
+                    wiggle_image = Image.open(f'kris_wiggle/kris_wiggle{i}.png')
+                    wiggle_image = wiggle_image.resize((128, 128), Image.Resampling.LANCZOS)
+                    if wiggle_image.mode != 'RGBA':
+                        wiggle_image = wiggle_image.convert('RGBA')
+                    self.wiggling_sprites.append(ImageTk.PhotoImage(wiggle_image))
+            except FileNotFoundError as e:
+                print(f"Wiggle sprites not found: {e}, using default sprites")
+
 
         
         
@@ -126,6 +140,8 @@ class DesktopPet:
         self.posing = False
         self.eating = False
         self.pirouetting = False
+        self.wiggling = False
+         # Movement speed and delay
         self.move_speed = 2
         self.move_delay = 50
         
@@ -141,6 +157,7 @@ class DesktopPet:
         # Bind mouse events
         self.label.bind('<Button-1>', self.start_drag)
         self.label.bind('<B1-Motion>', self.on_drag)
+        self.label.bind('<ButtonRelease-1>', self.end_drag)
         self.label.bind('<Button-3>', self.show_menu)
         
        
@@ -153,6 +170,7 @@ class DesktopPet:
     
     def start_drag(self, event):
         self.moving = False
+        self.sitting = True
         self.x = event.x
         self.y = event.y
        
@@ -162,12 +180,12 @@ class DesktopPet:
         menu.add_command(label="Бежать", command=self.run)
         menu.add_command(label="Танцевать", command=self.dance)
         menu.add_command(label="Позировать", command=self.pose)
-        menu.add_command(label="Стоять", command=self.stand)
         menu.add_command(label="Гулять", command=self.walk)
-        menu.add_command(label="Спать", command=self.sleep)
-        menu.add_command(label="Есть", command=self.eat)
+        if self.title == "Susie":
+            menu.add_command(label="Есть", command=self.eat)
         if self.title == "Kris":
             menu.add_command(label="Сделать пируэт", command=self.pirouette)
+            menu.add_command(label="Дрыгаться", command=self.wiggle)
         
         menu.add_separator()
         
@@ -218,10 +236,7 @@ class DesktopPet:
         self.move_speed = 0
         self.window.after(3000, self.reset_action)
 
-    def stand(self):
-        print("Питомец стоит!")
-        self.reset_action()
-
+   
     def walk(self):
         print("Питомец гуляет!")
         self.moving = True
@@ -232,13 +247,7 @@ class DesktopPet:
         self.direction = random.choice([-1, 1])
         self.window.after(5000, self.reset_action)
 
-    def sleep(self):
-        print("Питомец спит!")
-        self.moving = False
-        self.dancing = False
-        self.running = False
-        self.move_speed = 0
-        self.window.after(10000, self.reset_action)
+    
 
     def eat(self):
         print("Питомец ест!")
@@ -269,13 +278,29 @@ class DesktopPet:
         self.move_speed = 0
         self.window.after(5000, self.reset_action)
 
-   
-    
+    def wiggle(self):
+        print("Питомец дрыгается!")
+        self.moving = False
+        self.dancing = False
+        self.running = False
+        self.sitting = False
+        self.posing = False
+        self.eating = False
+        self.pirouetting = False 
+        self.wiggling = True
+        self.move_speed = 0 
+        self.window.after(10000, self.reset_action)
+
+       
     def on_drag(self, event):
         x = self.window.winfo_x() + event.x - self.x
         y = self.window.winfo_y() + event.y - self.y
         self.window.geometry(f'+{x}+{y}')
-    
+        self.sitting = True  
+        
+    def end_drag(self, event):
+        self.sitting = False
+        
     def quit_program(self):
         self.window.quit()
     
@@ -299,6 +324,11 @@ class DesktopPet:
         elif self.posing and self.posing_sprite:
             self.label.configure(image=self.posing_sprite)
             self.label.image = self.posing_sprite
+        elif self.wiggling and self.wiggling_sprites:
+            self.wiggling_sprite_index = (self.wiggling_sprite_index + 1) % len(self.wiggling_sprites)
+            current_wiggling_sprite = self.wiggling_sprites[self.wiggling_sprite_index]
+            self.label.configure(image=current_wiggling_sprite)
+            self.label.image = current_wiggling_sprite
         else:
             # Switch between sprites
             self.current_sprite = (self.current_sprite + 1) % len(self.sprites)
@@ -322,7 +352,7 @@ class DesktopPet:
     def move(self):
         if not self.moving:
             # Randomly decide to start moving (если не сидит)
-            if not self.running and not self.dancing and not self.sitting and not self.eating and not self.posing and not self.pirouetting:
+            if not self.running and not self.dancing and not self.sitting and not self.eating and not self.posing and not self.pirouetting and not self.wiggling:
                 self.moving = random.random() < 0.3
                 if self.moving:
                     self.direction = random.choice([-1, 1])
