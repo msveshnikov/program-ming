@@ -77,23 +77,23 @@ class DesktopPet:
             except FileNotFoundError:
                 print("kris_pose.png not found, using default sprites")
 
-        self,becoming_dog_sprite = None
+        self.becoming_dog_sprite = None
         if title == "Susie":  # Only for Susie pet
             try:
-                dog_image = Image.open('susie_dog.png')
-                dog_image = dog_image.resize((128, 128), Image.Resampling.LANCZOS)
-                if dog_image.mode != 'RGBA':
-                    dog_image = dog_image.convert('RGBA')
-                self.becoming_dog_sprite = ImageTk.PhotoImage(dog_image)
+                become_dog_image = Image.open('susie_become_dog.png')
+                become_dog_image = become_dog_image.resize((128, 128), Image.Resampling.LANCZOS)
+                if become_dog_image.mode != 'RGBA':
+                    become_dog_image = become_dog_image.convert('RGBA')
+                self.becoming_dog_sprite = ImageTk.PhotoImage(become_dog_image)
             except FileNotFoundError:
                 print("susie_dog.png not found, using default sprites")
         if title == "Kris":  # Only for Kris pet
             try:
-                dog_image = Image.open('kris_dog.png')
-                dog_image = dog_image.resize((128, 128), Image.Resampling.LANCZOS)
-                if dog_image.mode != 'RGBA':
-                    dog_image = dog_image.convert('RGBA')
-                self.becoming_dog_sprite = ImageTk.PhotoImage(dog_image)
+                become_dog_image = Image.open('kris_become_dog.png')
+                become_dog_image = become_dog_image.resize((128, 128), Image.Resampling.LANCZOS)
+                if become_dog_image.mode != 'RGBA':
+                    become_dog_image = become_dog_image.convert('RGBA')
+                self.becoming_dog_sprite = ImageTk.PhotoImage(become_dog_image)
             except FileNotFoundError:
                 print("kris_dog.png not found, using default sprites")          
 
